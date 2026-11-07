@@ -74,5 +74,81 @@
   "chipIdle": {
     "message": "Idle",
     "description": "Idle status for engine chip"
+  },
+  "chipReady": {
+    "message": "Ready",
+    "description": "Status chip text when idle or ready"
+  },
+  "chipError": {
+    "message": "Error",
+    "description": "Status chip text when last translation failed"
+  },
+  "cardGeneral": {
+    "message": "General",
+    "description": "General settings card heading"
+  },
+  "optgroupPopular": {
+    "message": "Popular languages",
+    "description": "Optgroup label for popular target languages"
+  },
+  "optgroupAll": {
+    "message": "All languages",
+    "description": "Optgroup label for all target languages"
+  },
+  "cardAiTitle": {
+    "message": "Better translation (free API key)",
+    "description": "AI API key card heading"
+  },
+  "cardAiDesc": {
+    "message": "Without an API key, Google Translate is used. Adding an AI key enables context-aware, much more natural translations.",
+    "description": "Explanation of AI translation benefits"
+  },
+  "labelGemini": {
+    "message": "Gemini API key",
+    "description": "Label for Gemini key field"
+  },
+  "badgeRecommended": {
+    "message": "Recommended",
+    "description": "Badge for Gemini key"
+  },
+  "labelGroq": {
+    "message": "Groq API key",
+    "description": "Label for Groq key field"
+  },
+  "badgeOptional": {
+    "message": "Backup, optional",
+    "description": "Badge for Groq key"
+  },
+  "placeholderGeminiKey": {
+    "message": "AIza...",
+    "description": "Placeholder for Gemini API key"
+  },
+  "placeholderGroqKey": {
+    "message": "gsk_...",
+    "description": "Placeholder for Groq API key"
+  },
+  "getKeyLink": {
+    "message": "Get key",
+    "description": "Link text to get an API key"
+  },
+  "btnShowKey": {
+    "message": "Show key",
+    "description": "Tooltip and aria-label to show API key"
+  },
+  "btnHideKey": {
+    "message": "Hide key",
+    "description": "Tooltip and aria-label to hide API key"
+  },
+  "msgKeySaved": {
+    "message": "Saved",
+    "description": "Feedback message when an API key is saved"
+  },
+  "privacyNote": {
+    "message": "Keys are stored locally in this browser and never synced. Under Gemini's free tier, submitted subtitle text may be used by Google for product improvement.",
+    "description": "Privacy note for API keys"
+  },
+  "infoDefault": {
+    "message": "Translation starts automatically on videos with subtitles.",
+    "description": "Default hint in footer info bar"
   }
 }

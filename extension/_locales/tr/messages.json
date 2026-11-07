@@ -74,5 +74,81 @@
   "chipIdle": {
     "message": "Boşta",
     "description": "Idle status for engine chip"
+  },
+  "chipReady": {
+    "message": "Hazır",
+    "description": "Status chip text when idle or ready"
+  },
+  "chipError": {
+    "message": "Hata",
+    "description": "Status chip text when last translation failed"
+  },
+  "cardGeneral": {
+    "message": "Genel",
+    "description": "General settings card heading"
+  },
+  "optgroupPopular": {
+    "message": "Sık kullanılanlar",
+    "description": "Optgroup label for popular target languages"
+  },
+  "optgroupAll": {
+    "message": "Tüm diller",
+    "description": "Optgroup label for all target languages"
+  },
+  "cardAiTitle": {
+    "message": "Daha iyi çeviri (ücretsiz API anahtarı)",
+    "description": "AI API key card heading"
+  },
+  "cardAiDesc": {
+    "message": "Anahtar olmadan Google çeviri kullanılır. Anahtar eklenirse yapay zekâ bağlamı kullanarak çok daha doğal çevirir.",
+    "description": "Explanation of AI translation benefits"
+  },
+  "labelGemini": {
+    "message": "Gemini anahtarı",
+    "description": "Label for Gemini key field"
+  },
+  "badgeRecommended": {
+    "message": "Önerilen",
+    "description": "Badge for Gemini key"
+  },
+  "labelGroq": {
+    "message": "Groq anahtarı",
+    "description": "Label for Groq key field"
+  },
+  "badgeOptional": {
+    "message": "Yedek, isteğe bağlı",
+    "description": "Badge for Groq key"
+  },
+  "placeholderGeminiKey": {
+    "message": "AIza...",
+    "description": "Placeholder for Gemini API key"
+  },
+  "placeholderGroqKey": {
+    "message": "gsk_...",
+    "description": "Placeholder for Groq API key"
+  },
+  "getKeyLink": {
+    "message": "Anahtar al",
+    "description": "Link text to get an API key"
+  },
+  "btnShowKey": {
+    "message": "Anahtarı göster",
+    "description": "Tooltip and aria-label to show API key"
+  },
+  "btnHideKey": {
+    "message": "Anahtarı gizle",
+    "description": "Tooltip and aria-label to hide API key"
+  },
+  "msgKeySaved": {
+    "message": "Kaydedildi",
+    "description": "Feedback message when an API key is saved"
+  },
+  "privacyNote": {
+    "message": "Anahtarlar yalnızca bu tarayıcıda saklanır, senkronlanmaz. Gemini ücretsiz katmanında gönderilen altyazı metni Google tarafından ürün geliştirmede kullanılabilir.",
+    "description": "Privacy note for API keys"
+  },
+  "infoDefault": {
+    "message": "Altyazılı bir videoda çeviri otomatik başlar.",
+    "description": "Default hint in footer info bar"
   }
 }

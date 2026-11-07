@@ -1,30 +1,113 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8">
-<style>
-  body { width: 320px; margin: 0; padding: 14px; font: 14px system-ui, sans-serif; color: #222; }
-  h1 { font-size: 15px; margin: 0 0 10px; }
-  h2 { font-size: 13px; margin: 16px 0 6px; }
-  label.row { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; gap: 8px; }
-  input[type=range] { width: 120px; }
-  input[type=password] { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #aaa; border-radius: 6px; font: inherit; }
-  .field { margin: 8px 0; }
-  .field span { display: block; margin-bottom: 3px; }
-  small { color: #666; display: block; margin-top: 6px; line-height: 1.4; }
-  a { color: #1a73e8; }
-  #status { margin-top: 10px; padding: 8px; border-radius: 6px; background: rgba(128,128,128,.15); font-size: 12px; word-break: break-word; }
-  @media (prefers-color-scheme: dark) { body { background: #1e1e1e; color: #eee; } small { color: #aaa; } input[type=password] { background: #2a2a2a; color: #eee; border-color: #555; } a { color: #8ab4f8; } }
-</style></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="popup.css">
+</head>
 <body>
-  <h1>YouTube Türkçe Altyazı</h1>
-  <label class="row">Türkçe çeviriyi göster <input type="checkbox" id="enabled"></label>
-  <label class="row">Orijinali de göster <input type="checkbox" id="showOriginal"></label>
-  <label class="row">Yazı boyutu <input type="range" id="size" min="60" max="200" step="10"></label>
+  <!-- Header Bar -->
+  <header class="header">
+    <div class="header-left">
+      <img src="icons/icon48.png" alt="" class="header-icon" width="32" height="32">
+      <div class="header-meta">
+        <h1 class="header-title" data-i18n="extName">YouTube Subtitle Translator</h1>
+        <span class="version-tag" id="version-tag"></span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="chip chip-ready" id="engine-chip">
+        <span class="chip-dot"></span>
+        <span class="chip-text" id="engine-text" data-i18n="chipReady">Ready</span>
+      </div>
+    </div>
+  </header>
 
-  <h2>Daha iyi çeviri için ücretsiz API anahtarı</h2>
-  <div class="field"><span>Gemini anahtarı (önerilen)</span><input type="password" id="geminiKey" autocomplete="off" placeholder="AIza..."></div>
-  <div class="field"><span>Groq anahtarı (yedek, isteğe bağlı)</span><input type="password" id="groqKey" autocomplete="off" placeholder="gsk_..."></div>
-  <small>Gemini: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a> · Groq: <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">console.groq.com/keys</a><br>
-  Anahtarlar yalnızca bu tarayıcıda saklanır, senkronlanmaz. Anahtar yoksa Google çeviri kullanılır. Ücretsiz Gemini katmanında gönderilen altyazı metni Google tarafından ürün geliştirmede kullanılabilir.</small>
-  <div id="status">Motor: —</div>
+  <!-- General Settings Card -->
+  <section class="card" aria-labelledby="card-general-title">
+    <h2 class="card-title" id="card-general-title" data-i18n="cardGeneral">General</h2>
+
+    <label class="row" for="enabled">
+      <span class="row-label" data-i18n="rowTranslation">Translation</span>
+      <span class="switch">
+        <input type="checkbox" id="enabled">
+        <span class="switch-slider"></span>
+      </span>
+    </label>
+
+    <div class="row">
+      <label for="target" class="row-label" data-i18n="rowTargetLang">Target language</label>
+      <select id="target" class="custom-select"></select>
+    </div>
+
+    <label class="row" for="showOriginal">
+      <span class="row-label" data-i18n="rowShowOriginal">Show original text</span>
+      <span class="switch">
+        <input type="checkbox" id="showOriginal">
+        <span class="switch-slider"></span>
+      </span>
+    </label>
+
+    <div class="row">
+      <label for="size" class="row-label" data-i18n="rowFontSize">Font size</label>
+      <div class="slider-wrap">
+        <input type="range" id="size" min="60" max="200" step="10" class="custom-range">
+        <span id="sizeVal" class="slider-val">100%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI / API Key Card -->
+  <section class="card" aria-labelledby="card-ai-title">
+    <h2 class="card-title" id="card-ai-title" data-i18n="cardAiTitle">Better translation (free API key)</h2>
+    <p class="card-desc" data-i18n="cardAiDesc">Without an API key, Google Translate is used. Adding an AI key enables context-aware, much more natural translations.</p>
+
+    <!-- Gemini Key Field -->
+    <div class="field-group">
+      <div class="field-header">
+        <div class="field-label-wrap">
+          <label for="geminiKey" class="field-label" data-i18n="labelGemini">Gemini API key</label>
+          <span class="badge badge-recommended" data-i18n="badgeRecommended">Recommended</span>
+        </div>
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" class="key-link" data-i18n="getKeyLink">Get key</a>
+      </div>
+      <div class="input-wrap">
+        <input type="password" id="geminiKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderGeminiKey" placeholder="AIza...">
+        <button type="button" class="eye-btn" data-target="geminiKey" data-i18n-title="btnShowKey" aria-label="Show key">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="field-feedback" id="geminiKey-feedback" aria-live="polite"></div>
+    </div>
+
+    <!-- Groq Key Field -->
+    <div class="field-group">
+      <div class="field-header">
+        <div class="field-label-wrap">
+          <label for="groqKey" class="field-label" data-i18n="labelGroq">Groq API key</label>
+          <span class="badge badge-optional" data-i18n="badgeOptional">Backup, optional</span>
+        </div>
+        <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" class="key-link" data-i18n="getKeyLink">Get key</a>
+      </div>
+      <div class="input-wrap">
+        <input type="password" id="groqKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderGroqKey" placeholder="gsk_...">
+        <button type="button" class="eye-btn" data-target="groqKey" data-i18n-title="btnShowKey" aria-label="Show key">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="field-feedback" id="groqKey-feedback" aria-live="polite"></div>
+    </div>
+
+    <p class="privacy-note" data-i18n="privacyNote">Keys are stored locally in this browser and never synced. Under Gemini's free tier, submitted subtitle text may be used by Google for product improvement.</p>
+  </section>
+
+  <!-- Bottom Info / Status Bar -->
+  <footer class="footer-bar" id="footer-bar">
+    <span class="footer-dot" id="footer-dot"></span>
+    <span class="footer-text" id="footer-text" data-i18n="infoDefault">Translation starts automatically on videos with subtitles.</span>
+  </footer>
+
+  <script src="languages.js"></script>
   <script src="popup.js"></script>
-</body></html>
+</body>
+</html>
