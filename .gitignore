@@ -3,3 +3,4 @@ node_modules/
 *.png
 !extension/icons/*.png
 dist/
+!docs/store/assets/*.png
