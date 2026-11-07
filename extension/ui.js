@@ -153,7 +153,7 @@
 
   function refresh() {
     const s = getSettings();
-    const target = s.target || 'tr';
+    const target = s.target || (ns.defaultTarget ? ns.defaultTarget() : 'en');
     const langCode = target.split('-')[0].toUpperCase();
     const targetName = getTargetName(target);
 

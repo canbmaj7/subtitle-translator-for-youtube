@@ -7,7 +7,7 @@
   const state = { gen: 0, videoId: null, key: null, rawUrl: null, events: null, sl: null, sentences: [], cues: [], idx: 0, raf: 0, ensureTimer: 0, engine: '' };
   let lastShown = null;
   let settingsLoaded = false, pendingTimedText = null;
-  let settings = { enabled: true, showOriginal: false, size: 100, target: 'tr' };
+  let settings = { enabled: true, showOriginal: false, size: 100, target: YTR.defaultTarget() };
 
   const applySettings = () => {
     if (!settings.enabled) deactivate();
@@ -63,7 +63,7 @@
     if (!v) return;
 
     state.rawUrl = rawUrl;
-    const target = settings.target || 'tr';
+    const target = settings.target || YTR.defaultTarget();
     const targetBase = baseLang(target);
     const srcBase = baseLang(lang);
     const tlangBase = tlang ? baseLang(tlang) : null;
@@ -112,7 +112,7 @@
   function process() {
     const curGen = ++state.gen;
     if (!state.events || !state.sl || !settings.enabled) return;
-    const target = settings.target || 'tr';
+    const target = settings.target || YTR.defaultTarget();
     const targetBase = baseLang(target);
     const srcBase = baseLang(state.sl);
 

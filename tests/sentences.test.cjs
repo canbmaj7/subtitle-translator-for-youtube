@@ -35,3 +35,8 @@ assert.equal(YTR.LANGS.length, 34);
 assert.ok(YTR.isRtl('ar') && YTR.isRtl('he') && !YTR.isRtl('tr'));
 assert.ok(YTR.isCjk('ja') && YTR.isCjk('zh-CN') && !YTR.isCjk('de'));
 console.log('sentences: 4/4 test geçti');
+
+// 5) Varsayılan hedef dil, tarayıcı arayüz dilinden türetilir
+const check = (ui, want) => { globalThis.chrome = { i18n: { getUILanguage: () => ui, getMessage: (k) => k } }; assert.equal(YTR.defaultTarget(), want, ui); };
+check('tr', 'tr'); check('en-US', 'en'); check('de-DE', 'de'); check('pt-BR', 'pt-BR'); check('pt-PT', 'pt'); check('zh-TW', 'zh-TW'); check('zh', 'zh-CN'); check('nb', 'no'); check('sw', 'en');
+console.log('sentences: varsayılan dil testi geçti');

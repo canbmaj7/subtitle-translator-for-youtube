@@ -45,6 +45,20 @@
   };
 
   // Sağdan sola (RTL) yazılan diller
+  // Varsayılan hedef dil: tarayıcı arayüz dili destekleniyorsa o, değilse İngilizce
+  ns.defaultTarget = () => {
+    let ui = 'en';
+    try { ui = (chrome.i18n.getUILanguage() || 'en').replace('_', '-'); } catch (_) {}
+    const langs = ns.LANGS || [];
+    if (langs.includes(ui)) return ui;
+    const lower = ui.toLowerCase();
+    if (lower === 'zh-tw' || lower === 'zh-hk' || lower === 'zh-hant') return 'zh-TW';
+    const base = lower.split('-')[0];
+    if (base === 'zh') return 'zh-CN';
+    if (base === 'nb' || base === 'nn') return 'no';
+    return langs.includes(base) ? base : 'en';
+  };
+
   ns.isRtl = (code) => {
     const base = (code || '').split('-')[0].toLowerCase();
     return ['ar', 'he', 'fa', 'ur'].includes(base);

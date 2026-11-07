@@ -51,7 +51,7 @@
   addGroup(t('optgroupAll'), remaining);
 
   // Senkronize ayarlar (chrome.storage.sync)
-  const syncDefaults = { enabled: true, showOriginal: false, size: 100, target: 'tr' };
+  const syncDefaults = { enabled: true, showOriginal: false, size: 100, target: ns.defaultTarget ? ns.defaultTarget() : 'en' };
   const elEnabled = document.getElementById('enabled');
   const elOrig = document.getElementById('showOriginal');
   const elSize = document.getElementById('size');
