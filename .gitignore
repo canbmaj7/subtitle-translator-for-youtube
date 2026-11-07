@@ -1,4 +1,5 @@
 profile*/
 node_modules/
 *.png
+!extension/icons/*.png
 dist/

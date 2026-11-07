@@ -21,4 +21,4 @@ Subtitle Translator for YouTube ("the extension") translates the captions of the
 - Access to `translate.googleapis.com`, `generativelanguage.googleapis.com`, `api.groq.com` — send caption text for translation.
 
 ## Contact
-[CONTACT EMAIL — fill in before publishing]
+Open an issue at https://github.com/canbmaj7/subtitle-translator-for-youtube/issues

@@ -24,3 +24,13 @@ Tarayıcı testleri Playwright'ın Chromium'u ile `--load-extension` bayrağıyl
 ## Yapılacaklar
 - Firefox/Edge uyumu, mağaza hazırlığı (gizlilik politikası, ekran görüntüleri).
 - Konuşma tanıma (altyazısı olmayan videolar).
+
+## Kurulum / Install
+
+**Chrome, Edge, Brave (geliştirici modu):** [Releases](https://github.com/canbmaj7/subtitle-translator-for-youtube/releases) sayfasından `subtitle-translator-*.zip` dosyasını indirip bir klasöre çıkarın. `chrome://extensions` → "Developer mode" → "Load unpacked" ile klasörü seçin.
+
+**Firefox:** `*-firefox.zip` paketi Mozilla tarafından imzalanana kadar yalnızca geçici yüklenebilir: `about:debugging` → "This Firefox" → "Load Temporary Add-on" → zip içindeki `manifest.json`. (Firefox 140+; Firefox üzerinde henüz test edilmedi.)
+
+**Paket üretmek:** `bash scripts/package.sh` (Chrome/Edge), `node scripts/build-firefox.cjs` (Firefox). Çıktılar `dist/` altına gider.
+
+Gizlilik: [PRIVACY.md](PRIVACY.md) · Lisans: MIT
