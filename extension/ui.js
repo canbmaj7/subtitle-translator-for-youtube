@@ -74,7 +74,7 @@
       else if (gear && gear.parentElement) gear.parentElement.insertBefore(btn, gear);
       else host.prepend(btn);
     }
-    if (!panel) panel = makePanel();
+    if (!panel) { panel = makePanel(); if (pendingStatus) ns.setStatus(pendingStatus[0], pendingStatus[1]); }
     if (panel.parentElement !== player) player.appendChild(panel);
     refresh();
   }
@@ -99,7 +99,9 @@
     }, true);
   };
   ns.refreshUI = refresh;
+  let pendingStatus = null; // panel oluşmadan gelen bilgiyi sakla
   ns.setStatus = (engine, error) => {
+    pendingStatus = [engine, error];
     if (!refs.status) return;
     refs.status.textContent = engine ? 'Motor: ' + engine + (engine === 'Google' ? ' (anahtarsız — daha iyi çeviri için araç çubuğundan anahtar ekle)' : '') : (error ? 'Çeviri hatası: ' + error : 'Motor: —');
   };
