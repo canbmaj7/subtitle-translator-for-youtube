@@ -3,7 +3,7 @@
   const ns = (globalThis.YTR = globalThis.YTR || {});
   const NOSPACE = /^(zh|ja|ko|th)/;
   const END_RE = /[.!?…。！？]["'”’)\]]*$/;
-  const ABBR_RE = /^(mr|mrs|ms|dr|prof|sr|jr|vs|etc|e\.g|i\.e|st|no)\.$/i;
+  const ABBR_RE = /^(mr|mrs|ms|dr|prof|sr|jr|vs|etc|e\.g|i\.e|st|no|a\.m|p\.m|u\.s|inc|ltd|co|approx|fig|dept)\.$/i;
   const TAG_RE = /^[\[(♪].*[\])♪]$/; // [Music], (applause), ♪
 
   // 1) Olaylar -> zaman damgalı kelimeler
@@ -60,9 +60,12 @@
       const prev = cur[cur.length - 1];
       if (TAG_RE.test(k.t) && cur.length) flush(); // [Music] kendi başına olsun
       cur.push(k); len += k.t.length + 1;
-      const isEnd = END_RE.test(k.t) && !ABBR_RE.test(k.t);
+      // Nokta sonrası küçük harfle devam ediyorsa (a.m. gibi) cümle bitmemiştir
+      const next = tokens[i + 1];
+      const lowerNext = next && /\.$/.test(k.t) && /^\p{Ll}/u.test(next.t);
+      const isEnd = END_RE.test(k.t) && !ABBR_RE.test(k.t) && !lowerNext;
       const longPause = k.gap > 800;
-      const tooLong = len > 220 || (len > 130 && /[,;:]$/.test(k.t));
+      const tooLong = len > 260 || (len > 170 && /[,;:]$/.test(k.t));
       if (isEnd || longPause || tooLong || TAG_RE.test(k.t)) flush();
     });
     flush();
