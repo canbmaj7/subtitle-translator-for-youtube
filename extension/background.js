@@ -14,7 +14,7 @@ function systemPrompt(sl, tl) {
   return [
     `You are a professional subtitle translator. Translate video subtitles ${src}into natural, fluent spoken ${LANGS[tl] || tl}.`,
     'The user sends a JSON array of consecutive subtitle sentences. They come from speech recognition, so they may lack punctuation, split sentences oddly or contain recognition errors: use the surrounding sentences as context and fix obvious mistakes.',
-    'Keep proper nouns, product names, code and technical terms (e.g. Python, API, Linux) as they are unless a common translation exists.',
+    'Translate ordinary words, titles and idioms into Turkish. Keep only person names, product names, code and widely used technical terms (e.g. Python, API, framework) in their original form.',
     'Do not merge, split, reorder or skip items. Do not add explanations.',
     'Reply ONLY with JSON of the form {"translations": [...]} holding exactly as many strings as the input array, in the same order.',
   ].join('\n');
@@ -118,8 +118,10 @@ async function translate(lines, sl, tl) {
     if (name !== 'Google' && cooldown[name] && cooldown[name] > Date.now()) continue;
     try {
       let res;
-      try { res = await run(); } catch (e) { // satır sayısı hatasında bir kez daha dene
-        if (e instanceof HttpError) throw e;
+      try { res = await run(); } catch (e) {
+        // Satır sayısı uyuşmazlığı ya da geçici sunucu hatası (5xx): bir kez daha dene
+        if (e instanceof HttpError && e.status < 500) throw e;
+        if (e instanceof HttpError) await new Promise((ok) => setTimeout(ok, 1500));
         res = await run();
       }
       return { res, engine: name, errors };
