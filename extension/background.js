@@ -3,6 +3,7 @@
 const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite'];
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const cooldown = {}; // motor -> yeniden denenebileceği zaman (ms)
+const config = { llmTimeoutMs: 30000, gtxTimeoutMs: 15000 };
 
 class HttpError extends Error {
   constructor(status, body) { super('HTTP ' + status + ' ' + String(body || '').slice(0, 160)); this.status = status; }
@@ -54,10 +55,26 @@ function parseTranslations(text, n) {
 }
 
 async function postJson(url, headers, body) {
-  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) });
-  const txt = await r.text();
-  if (!r.ok) throw new HttpError(r.status, txt);
-  return JSON.parse(txt);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), config.llmTimeoutMs);
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    const txt = await r.text();
+    if (!r.ok) throw new HttpError(r.status, txt);
+    return JSON.parse(txt);
+  } catch (e) {
+    if (ctrl.signal.aborted || (e && (e.name === 'AbortError' || e.name === 'TimeoutError'))) {
+      throw new HttpError(0, 'timeout');
+    }
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 async function viaGemini(key, lines, sl, tl) {
@@ -113,10 +130,26 @@ async function gtx(lines, sl, tl) {
   const gtxSl = mapGtxLang(sl);
   const gtxTl = mapGtxLang(tl);
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(gtxSl || 'auto')}&tl=${encodeURIComponent(gtxTl)}&dt=t&dj=0`;
-  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
-  if (!r.ok) throw new HttpError(r.status, '');
-  const data = await r.json();
-  return (data[0] || []).map((s) => s[0] || '').join('');
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), config.gtxTimeoutMs);
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+      signal: ctrl.signal,
+    });
+    if (!r.ok) throw new HttpError(r.status, '');
+    const data = await r.json();
+    return (data[0] || []).map((s) => s[0] || '').join('');
+  } catch (e) {
+    if (ctrl.signal.aborted || (e && (e.name === 'AbortError' || e.name === 'TimeoutError'))) {
+      throw new HttpError(0, 'timeout');
+    }
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 async function viaGtx(lines, sl, tl) {
@@ -150,7 +183,8 @@ async function translate(lines, sl, tl) {
       return { res, engine: name, errors };
     } catch (e) {
       const status = e instanceof HttpError ? e.status : 0;
-      if (status === 429) cooldown[name] = Date.now() + 60 * 1000;
+      if (status === 0) cooldown[name] = Date.now() + 30 * 1000;
+      else if (status === 429) cooldown[name] = Date.now() + 60 * 1000;
       else if (status === 400 || status === 401 || status === 403) cooldown[name] = Date.now() + 10 * 60 * 1000;
       errors.push(name + ': ' + (e && e.message ? e.message : e));
     }
@@ -168,4 +202,4 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
     }
   });
 }
-if (typeof module !== 'undefined') module.exports = { translate, parseTranslations, cooldown };
+if (typeof module !== 'undefined') module.exports = { translate, parseTranslations, cooldown, config, HttpError };

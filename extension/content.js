@@ -4,10 +4,20 @@
   const log = (...a) => console.log('[YTR]', ...a);
   const baseLang = (c) => (c || '').split('-')[0].toLowerCase();
 
-  const state = { gen: 0, videoId: null, key: null, rawUrl: null, events: null, sl: null, sentences: [], cues: [], idx: 0, raf: 0, ensureTimer: 0, engine: '' };
+  const state = { gen: 0, videoId: null, key: null, rawUrl: null, events: null, sl: null, sentences: [], cues: [], idx: 0, raf: 0, ensureTimer: 0, engine: '', progress: null };
   let lastShown = null;
   let settingsLoaded = false, pendingTimedText = null;
-  let settings = { enabled: true, showOriginal: false, size: 100, target: YTR.defaultTarget() };
+  let settings = { enabled: true, showOriginal: false, size: 100, target: YTR.defaultTarget(), waitForTranslation: false };
+  let scheduler = null;
+  const waitCtrl = YTR.createWaitController ? YTR.createWaitController({
+    getVideo: () => document.querySelector('#movie_player video'),
+    isEnabled: () => !!settings.waitForTranslation,
+    getProgress: () => state.progress,
+  }) : null;
+
+  YTR.retryFailed = () => {
+    if (scheduler) scheduler.retryFailed();
+  };
 
   const applySettings = () => {
     if (!settings.enabled) deactivate();
@@ -89,7 +99,10 @@
   }
 
   function resetFor(videoId, key) {
-    state.gen++; state.videoId = videoId; state.key = key; state.sentences = []; state.cues = []; state.idx = 0;
+    if (scheduler) { scheduler.stop(); scheduler = null; }
+    if (waitCtrl) waitCtrl.reset();
+    state.gen++; state.videoId = videoId; state.key = key; state.sentences = []; state.cues = []; state.idx = 0; state.progress = null;
+    if (YTR.setProgress) YTR.setProgress(null);
     deactivate();
   }
 
@@ -111,6 +124,8 @@
   // Ham olaylardan cümle ve çeviri akışını başlatır
   function process() {
     const curGen = ++state.gen;
+    if (scheduler) { scheduler.stop(); scheduler = null; }
+    if (waitCtrl) waitCtrl.reset();
     if (!state.events || !state.sl || !settings.enabled) return;
     const target = settings.target || YTR.defaultTarget();
     const targetBase = baseLang(target);
@@ -128,10 +143,29 @@
     rebuild();
     log(sentences.length, 'cümle,', state.cues.length, 'parça, dil:', state.sl, '->', target);
     activate();
-    translateAll(sentences, state.sl, curGen, target);
+
+    if (YTR.createScheduler) {
+      scheduler = YTR.createScheduler({
+        sentences, sl: state.sl, target, gen: curGen,
+        getGen: () => state.gen,
+        getPlayheadMs: () => { const v = document.querySelector('#movie_player video'); return v ? v.currentTime * 1000 : 0; },
+        send: async (lines) => {
+          try { return await chrome.runtime.sendMessage({ type: 'translate', lines, sl: state.sl, tl: target }); }
+          catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
+        },
+        onChunkDone: (_chunk, res) => {
+          if (res && res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); }
+          rebuild();
+          if (waitCtrl) waitCtrl.onChunkDone();
+        },
+        onProgress: (p) => { state.progress = p; if (YTR.setProgress) YTR.setProgress(p); },
+      });
+    }
   }
 
   function onTargetChanged() {
+    if (scheduler) { scheduler.stop(); scheduler = null; }
+    if (waitCtrl) waitCtrl.reset();
     if (YTR.refreshUI) YTR.refreshUI();
     if (!settings.enabled) return;
     if (state.events && state.sl) process();
@@ -143,48 +177,6 @@
     const isCjk = YTR.isCjk ? YTR.isCjk(settings.target) : /^(zh|ja|ko|th)/.test(settings.target);
     state.cues = YTR.toCues(state.sentences, isCjk ? 30 : 70);
     state.idx = 0;
-  }
-
-  async function translateAll(sentences, sl, gen, target) {
-    const chunks = [];
-    let cur = [], len = 0;
-    for (const c of sentences) {
-      if (cur.length >= 40 || len + c.text.length > 3000) { chunks.push(cur); cur = []; len = 0; }
-      cur.push(c); len += c.text.length + 1;
-    }
-    if (cur.length) chunks.push(cur);
-    chunks.forEach((c) => { c.s = c[0].s; c.e = c[c.length - 1].e; c.done = false; });
-
-    // Oynatma konumuna en yakın, henüz çevrilmemiş bölümü seç
-    const pickNext = () => {
-      const video = document.querySelector('#movie_player video');
-      const t = video ? video.currentTime * 1000 : 0;
-      let best = null, bestD = Infinity;
-      for (const c of chunks) {
-        if (c.done) continue;
-        const d = t < c.s ? c.s - t : t > c.e ? t - c.e : 0;
-        if (d < bestD) { bestD = d; best = c; }
-      }
-      if (best) best.done = true;
-      return best;
-    };
-
-    const worker = async () => {
-      let chunk;
-      while (gen === state.gen && (chunk = pickNext())) {
-        const res = await chrome.runtime.sendMessage({ type: 'translate', lines: chunk.map((c) => c.text), sl, tl: target });
-        if (gen !== state.gen) return;
-        if (res && res.ok) {
-          if (res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); }
-          chunk.forEach((c, i) => { c.tr = (res.res[i] || '').trim() || c.text; });
-          rebuild();
-        } else {
-          log('çeviri hatası', res && res.error);
-        }
-      }
-    };
-    await Promise.all([worker(), worker(), worker()]);
-    if (gen === state.gen) log('çeviri tamamlandı');
   }
 
   function overlay() {
@@ -206,6 +198,7 @@
   function deactivate() {
     document.documentElement.classList.remove('ytr-active');
     cancelAnimationFrame(state.raf); state.raf = 0;
+    if (waitCtrl) waitCtrl.reset();
     const el = document.getElementById('ytr-overlay');
     if (el) el.replaceChildren();
     lastShown = null;
@@ -229,6 +222,20 @@
     while (state.idx + 1 < cues.length && cues[state.idx + 1].s <= t) state.idx++;
     let cue = cues[state.idx];
     if (cue && !(cue.s <= t && t < cue.e)) cue = null;
+
+    const waitStatus = waitCtrl && waitCtrl.check(cue);
+    if (waitStatus && waitStatus.waiting) {
+      const sig = 'waiting|' + (cue ? cue.s : 0) + '|' + settings.size;
+      if (sig === lastShown) return;
+      lastShown = sig;
+      el.replaceChildren();
+      const line = document.createElement('div');
+      line.className = 'ytr-line ytr-pending';
+      line.textContent = YTR.t ? YTR.t('waitingText') : 'Çevriliyor…';
+      el.appendChild(line);
+      return;
+    }
+
     const sig = cue ? cue.s + '|' + (cue.tr ? cue.tr.length : 0) + '|' + settings.showOriginal + '|' + settings.size + '|' + settings.target : null;
     if (sig === lastShown) return;
     lastShown = sig;

@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_extName__",
-  "version": "0.4.0",
+  "version": "0.5.0",
+  "minimum_chrome_version": "111",
   "description": "__MSG_extDescription__",
   "permissions": [
     "storage"
@@ -33,6 +34,8 @@
       "js": [
         "languages.js",
         "sentences.js",
+        "scheduler.js",
+        "wait.js",
         "ui.js",
         "content.js"
       ],

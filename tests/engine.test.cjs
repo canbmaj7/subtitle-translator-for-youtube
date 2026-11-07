@@ -9,7 +9,7 @@ globalThis.fetch = async (url, opts) => {
   const p = plan[host]; if (!p) throw new Error('beklenmeyen ' + host);
   return p(url, opts);
 };
-const { translate, cooldown } = require(require('path').join(__dirname, '../extension/background.js'));
+const { translate, cooldown, config } = require(require('path').join(__dirname, '../extension/background.js'));
 const geminiOK = (arr) => () => json(200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ translations: arr }) }] } }] });
 const gtxOK = () => json(200, [[['bir\n', 'one\n'], ['iki', 'two']]]);
 const reset = () => { calls = []; plan = {}; for (const k in cooldown) delete cooldown[k]; };
@@ -41,5 +41,29 @@ const reset = () => { calls = []; plan = {}; for (const k in cooldown) delete co
   // 8) Hepsi çökerse hata
   reset(); store = {}; plan['translate.googleapis.com'] = () => json(500, {});
   await assert.rejects(() => translate(['x'], 'en', 'tr'), /HTTP 500/);
-  console.log('8/8 motor testi geçti');
+
+  // 9) Zaman aşımı: signal abort olunca AbortError ile reddeden sahte fetch -> Google'a düşer, cooldown 30s
+  reset();
+  const origTimeout = config.llmTimeoutMs;
+  config.llmTimeoutMs = 50;
+  store = { geminiKey: 'k' };
+  plan['generativelanguage.googleapis.com'] = (_url, opts) => new Promise((_, reject) => {
+    if (opts && opts.signal) {
+      opts.signal.addEventListener('abort', () => {
+        const err = new Error('The operation was aborted');
+        err.name = 'AbortError';
+        reject(err);
+      });
+    }
+  });
+  plan['translate.googleapis.com'] = gtxOK;
+  try {
+    r = await translate(['one', 'two'], 'en', 'tr');
+    assert.equal(r.engine, 'Google');
+    assert.ok(r.errors.some((e) => e.includes('timeout')), 'Hata listesinde timeout olmalı');
+    assert.ok(cooldown.Gemini > Date.now(), 'Gemini bekleme süresine alınmalı');
+  } finally {
+    config.llmTimeoutMs = origTimeout;
+  }
+  console.log('9/9 motor testi geçti');
 })().catch((e) => { console.error('BAŞARISIZ:', e.message); process.exit(1); });

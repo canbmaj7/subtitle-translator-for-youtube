@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "YouTube Altyazı Çevirmeni",
+    "message": "YouTube için Altyazı Çevirmeni",
     "description": "Extension name"
   },
   "extDescription": {
@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "btnTitle": {
-    "message": "$LANG$ çeviri (tıkla: aç/kapat · sağ tık: ayarlar)",
+    "message": "$LANG$ çevirisi — tık: ayarlar ve aç/kapa · Shift+tık: hızlı aç/kapa",
     "description": "Tooltip for player button",
     "placeholders": {
       "lang": {
@@ -150,5 +150,33 @@
   "infoDefault": {
     "message": "Altyazılı bir videoda çeviri otomatik başlar.",
     "description": "Default hint in footer info bar"
+  },
+  "btnRetry": {
+    "message": "Yeniden dene",
+    "description": "btnRetry"
+  },
+  "descWaitForTranslation": {
+    "message": "Çeviri hazır değilse video kısa süre duraklatılır",
+    "description": "descWaitForTranslation"
+  },
+  "rowWaitForTranslation": {
+    "message": "Çeviri gelene kadar bekle",
+    "description": "rowWaitForTranslation"
+  },
+  "waitingText": {
+    "message": "Çevriliyor…",
+    "description": "waitingText"
+  },
+  "progressReady": {
+    "message": "Çeviri hazır",
+    "description": "progressReady"
+  },
+  "progressTranslating": {
+    "message": "Çevriliyor… $1/$2",
+    "description": "progressTranslating"
+  },
+  "progressFailed": {
+    "message": "$1 bölüm çevrilemedi",
+    "description": "progressFailed"
   }
 }

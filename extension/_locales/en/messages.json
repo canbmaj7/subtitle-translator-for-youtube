@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "YouTube Subtitle Translator",
+    "message": "Subtitle Translator for YouTube",
     "description": "Extension name"
   },
   "extDescription": {
@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "btnTitle": {
-    "message": "$LANG$ translation (click: toggle · right-click: settings)",
+    "message": "$LANG$ translation — click: settings & on/off · Shift+click: quick on/off",
     "description": "Tooltip for player button",
     "placeholders": {
       "lang": {
@@ -150,5 +150,33 @@
   "infoDefault": {
     "message": "Translation starts automatically on videos with subtitles.",
     "description": "Default hint in footer info bar"
+  },
+  "btnRetry": {
+    "message": "Retry",
+    "description": "btnRetry"
+  },
+  "descWaitForTranslation": {
+    "message": "Pause briefly if translation is not ready yet",
+    "description": "descWaitForTranslation"
+  },
+  "rowWaitForTranslation": {
+    "message": "Wait for translation",
+    "description": "rowWaitForTranslation"
+  },
+  "waitingText": {
+    "message": "Translating…",
+    "description": "waitingText"
+  },
+  "progressReady": {
+    "message": "Translation ready",
+    "description": "progressReady"
+  },
+  "progressTranslating": {
+    "message": "Translating… $1/$2",
+    "description": "progressTranslating"
+  },
+  "progressFailed": {
+    "message": "$1 sections could not be translated",
+    "description": "progressFailed"
   }
 }

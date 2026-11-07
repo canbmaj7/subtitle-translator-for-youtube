@@ -1,4 +1,4 @@
-# YouTube Subtitle Translator (YouTube Altyazı Çevirmeni)
+# Subtitle Translator for YouTube (YouTube için Altyazı Çevirmeni)
 
 YouTube'da otomatik çeviri seçeneği olmayan videolarda orijinal altyazıyı seçtiğiniz dile çevirip videonun üstünde gösteren Chrome (MV3) eklentisi.
 

@@ -104,3 +104,5 @@ label.row { cursor: pointer; }
 .footer-bar.error { background: var(--error-bg); border-color: rgba(220, 38, 38, 0.3); }
 .footer-bar.error .footer-dot { background: var(--error); }
 .footer-bar.error .footer-text { color: var(--error-text); }
+.row-label-wrap { display: flex; flex-direction: column; min-width: 0; }
+.row-desc { font-size: 10.5px; color: var(--text-muted); line-height: 1.3; }

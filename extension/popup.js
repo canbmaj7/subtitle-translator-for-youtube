@@ -51,15 +51,17 @@
   addGroup(t('optgroupAll'), remaining);
 
   // Senkronize ayarlar (chrome.storage.sync)
-  const syncDefaults = { enabled: true, showOriginal: false, size: 100, target: ns.defaultTarget ? ns.defaultTarget() : 'en' };
+  const syncDefaults = { enabled: true, showOriginal: false, waitForTranslation: false, size: 100, target: ns.defaultTarget ? ns.defaultTarget() : 'en' };
   const elEnabled = document.getElementById('enabled');
   const elOrig = document.getElementById('showOriginal');
+  const elWait = document.getElementById('waitForTranslation');
   const elSize = document.getElementById('size');
   const elSizeVal = document.getElementById('sizeVal');
 
   chrome.storage.sync.get(syncDefaults, (s) => {
     elEnabled.checked = !!s.enabled;
     elOrig.checked = !!s.showOriginal;
+    elWait.checked = !!s.waitForTranslation;
     elSize.value = s.size != null ? s.size : 100;
     elSizeVal.textContent = (s.size != null ? s.size : 100) + '%';
     if (s.target) selTarget.value = s.target;
@@ -67,6 +69,7 @@
 
   elEnabled.addEventListener('change', () => chrome.storage.sync.set({ enabled: elEnabled.checked }));
   elOrig.addEventListener('change', () => chrome.storage.sync.set({ showOriginal: elOrig.checked }));
+  elWait.addEventListener('change', () => chrome.storage.sync.set({ waitForTranslation: elWait.checked }));
   elSize.addEventListener('input', () => {
     elSizeVal.textContent = elSize.value + '%';
     chrome.storage.sync.set({ size: Number(elSize.value) });
@@ -157,6 +160,7 @@
     if (area === 'sync') {
       if (changes.enabled) elEnabled.checked = !!changes.enabled.newValue;
       if (changes.showOriginal) elOrig.checked = !!changes.showOriginal.newValue;
+      if (changes.waitForTranslation) elWait.checked = !!changes.waitForTranslation.newValue;
       if (changes.size) {
         const val = changes.size.newValue != null ? changes.size.newValue : 100;
         elSize.value = val;
