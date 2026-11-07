@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<style>
+  body { width: 260px; margin: 0; padding: 14px; font: 14px system-ui, sans-serif; color: #222; }
+  h1 { font-size: 15px; margin: 0 0 10px; }
+  label { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; gap: 8px; }
+  input[type=range] { width: 120px; }
+  small { color: #666; display: block; margin-top: 12px; line-height: 1.4; }
+  @media (prefers-color-scheme: dark) { body { background: #1e1e1e; color: #eee; } small { color: #aaa; } }
+</style></head>
+<body>
+  <h1>YouTube Türkçe Altyazı</h1>
+  <label>Türkçe çeviriyi göster <input type="checkbox" id="enabled"></label>
+  <label>Orijinali de göster <input type="checkbox" id="showOriginal"></label>
+  <label>Yazı boyutu <input type="range" id="size" min="60" max="200" step="10"></label>
+  <small>Videoda Türkçe altyazı yoksa orijinal altyazı otomatik çevrilir. Ayarlar anında uygulanır.</small>
+  <script src="popup.js"></script>
+</body></html>

@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Türkçe Altyazı",
+  "version": "0.2.0",
+  "description": "YouTube'un otomatik çeviri seçeneği olmayan videolarda orijinal altyazıyı Türkçeye çevirip videonun üstünde gösterir.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://translate.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "inject.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "sentences.js",
+        "ui.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YouTube Türkçe Altyazı"
+  }
+}
