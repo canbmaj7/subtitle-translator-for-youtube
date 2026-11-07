@@ -48,11 +48,12 @@
     enabled.addEventListener('change', () => setSetting('enabled', enabled.checked));
     orig.addEventListener('change', () => setSetting('showOriginal', orig.checked));
     size.addEventListener('input', () => setSetting('size', Number(size.value)));
-    p.append(el('div', 'ytr-title', 'YouTube Türkçe Altyazı'), row('Türkçe çeviriyi göster', enabled), row('Orijinal metni de göster', orig), row('Yazı boyutu', sizeWrap));
+    const status = el('div', 'ytr-status', 'Motor: —');
+    p.append(el('div', 'ytr-title', 'YouTube Türkçe Altyazı'), row('Türkçe çeviriyi göster', enabled), row('Orijinal metni de göster', orig), row('Yazı boyutu', sizeWrap), status);
     // Panel içindeki etkileşimler oynatıcıya (duraklat, kısayol vb.) ulaşmasın
     for (const ev of ['click', 'dblclick', 'mousedown', 'mouseup', 'keydown', 'keyup', 'contextmenu', 'wheel'])
       p.addEventListener(ev, (e) => e.stopPropagation());
-    refs = { enabled, orig, size, sizeVal };
+    refs = { enabled, orig, size, sizeVal, status };
     return p;
   }
 
@@ -98,4 +99,8 @@
     }, true);
   };
   ns.refreshUI = refresh;
+  ns.setStatus = (engine, error) => {
+    if (!refs.status) return;
+    refs.status.textContent = engine ? 'Motor: ' + engine + (engine === 'Google' ? ' (anahtarsız — daha iyi çeviri için araç çubuğundan anahtar ekle)' : '') : (error ? 'Çeviri hatası: ' + error : 'Motor: —');
+  };
 })();

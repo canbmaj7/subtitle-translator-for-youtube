@@ -33,3 +33,5 @@ html.ytr-active .ytp-caption-window-container { opacity: 0 !important; pointer-e
 .ytr-panel input[type=range] { width: 110px; accent-color: #f00; cursor: pointer; }
 .ytr-panel .ytr-sizewrap { display: inline-flex; align-items: center; gap: 8px; }
 .ytr-panel .ytr-val { min-width: 36px; text-align: right; opacity: .8; }
+
+.ytr-panel .ytr-status { margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.15); font-size: 12px; opacity: .75; }

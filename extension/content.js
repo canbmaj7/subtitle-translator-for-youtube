@@ -14,10 +14,12 @@
     if (YTR.refreshUI) YTR.refreshUI();
   };
   chrome.storage.sync.get(settings, (s) => { settings = { ...settings, ...s }; applySettings(); });
-  chrome.storage.onChanged.addListener((ch) => {
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area === 'local') { if (ch.lastEngine || ch.lastError) YTR.setStatus && YTR.setStatus(ch.lastEngine ? ch.lastEngine.newValue : null, ch.lastError ? ch.lastError.newValue : ''); return; }
     for (const k in ch) settings[k] = ch[k].newValue;
     applySettings();
   });
+  chrome.storage.local.get({ lastEngine: '', lastError: '' }, (s) => YTR.setStatus && YTR.setStatus(s.lastEngine, s.lastError));
 
   // ---- Altyazı adresi yakalama ----
   YTR.initUI(() => settings, (k, v) => chrome.storage.sync.set({ [k]: v }));
@@ -89,7 +91,7 @@
         const chunk = chunks[next++];
         const res = await chrome.runtime.sendMessage({ type: 'translate', lines: chunk.map((c) => c.text), sl, tl: TARGET });
         if (key !== state.key) return;
-        if (res && res.ok) { chunk.forEach((c, i) => { c.tr = (res.res[i] || '').trim() || c.text; }); rebuild(); }
+        if (res && res.ok) { if (res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); } chunk.forEach((c, i) => { c.tr = (res.res[i] || '').trim() || c.text; }); rebuild(); }
         else log('çeviri hatası', res && res.error);
       }
     };
