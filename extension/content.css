@@ -14,24 +14,60 @@ html.ytr-active .ytp-caption-window-container { opacity: 0 !important; pointer-e
 #ytr-overlay .ytr-orig { opacity: .7; font-size: .75em; }
 #ytr-overlay .ytr-pending { opacity: .6; font-style: italic; }
 
-/* Oynatıcı düğmesi */
+/* Oynatıcı kontrol çubuğu düğmesi */
 .ytr-btn { position: relative; color: #fff; opacity: .65; display: inline-flex !important; align-items: center; justify-content: center; }
 .ytr-btn svg { width: 36px; height: 36px; }
 .ytr-btn:hover, .ytr-btn.ytr-on { opacity: 1; }
-.ytr-btn.ytr-on::after { content: ''; position: absolute; left: 50%; bottom: 9px; width: 18px; height: 3px; margin-left: -9px; background: #f00; border-radius: 2px; }
+.ytr-btn.ytr-on::after { content: ''; position: absolute; left: 50%; bottom: 9px; width: 18px; height: 3px; margin-left: -9px; background: #f03; border-radius: 2px; }
 
-/* Ayar paneli */
+/* Ayar paneli (sağ üst) */
 .ytr-panel {
-  position: absolute; right: 12px; bottom: 64px; z-index: 70; width: 270px; box-sizing: border-box;
-  background: rgba(28, 28, 28, .96); color: #fff; border-radius: 12px; padding: 12px 16px;
-  font: 13px/1.4 Roboto, Arial, sans-serif; box-shadow: 0 4px 24px rgba(0, 0, 0, .5);
+  position: absolute; top: 56px; right: 12px; bottom: auto; z-index: 70; width: 288px; box-sizing: border-box;
+  max-height: calc(100% - 120px); overflow-y: auto;
+  background: rgba(24, 24, 24, .94); color: #f1f1f1; border-radius: 14px; padding: 14px 16px;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  font: 13px/1.4 Roboto, "YouTube Sans", Arial, sans-serif;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .08);
 }
 .ytr-panel[hidden] { display: none; }
-.ytr-panel .ytr-title { font-weight: 600; margin-bottom: 6px; }
-.ytr-panel .ytr-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; }
-.ytr-panel input[type=checkbox] { width: 18px; height: 18px; accent-color: #f00; cursor: pointer; }
-.ytr-panel input[type=range] { width: 110px; accent-color: #f00; cursor: pointer; }
-.ytr-panel .ytr-sizewrap { display: inline-flex; align-items: center; gap: 8px; }
-.ytr-panel .ytr-val { min-width: 36px; text-align: right; opacity: .8; }
 
-.ytr-panel .ytr-status { margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.15); font-size: 12px; opacity: .75; }
+/* Başlık ve motor etiketi */
+.ytr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, .1); }
+.ytr-title { font-size: 13px; font-weight: 600; color: #fff; letter-spacing: .2px; }
+.ytr-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(255, 255, 255, .08); color: #ccc; }
+.ytr-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: #888; }
+.ytr-chip.ytr-engine-gemini .ytr-chip-dot { background: #10b981; }
+.ytr-chip.ytr-engine-groq .ytr-chip-dot { background: #f59e0b; }
+.ytr-chip.ytr-engine-google .ytr-chip-dot { background: #888888; }
+.ytr-chip.ytr-engine-error .ytr-chip-dot { background: #ef4444; }
+
+/* Satırlar */
+.ytr-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; min-height: 28px; }
+.ytr-row-label { font-size: 13px; color: #ddd; user-select: none; }
+
+/* Özel CSS Açma/Kapama Anahtarı (Switch) */
+.ytr-switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; cursor: pointer; }
+.ytr-switch input { opacity: 0; width: 0; height: 0; position: absolute; margin: 0; }
+.ytr-switch-slider { position: absolute; inset: 0; background: rgba(255, 255, 255, .2); border-radius: 20px; transition: background .2s ease; }
+.ytr-switch-slider::before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform .2s ease; }
+.ytr-switch input:checked + .ytr-switch-slider { background: #f03; }
+.ytr-switch input:checked + .ytr-switch-slider::before { transform: translateX(16px); }
+
+/* Hedef Dil Seçici (Select) */
+.ytr-select {
+  background: rgba(255, 255, 255, .08); color: #fff; border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 6px; padding: 4px 8px; font-size: 12px; font-family: inherit;
+  outline: none; max-width: 140px; cursor: pointer;
+}
+.ytr-select option { background: #1f1f1f; color: #fff; }
+.ytr-select:focus { border-color: #f03; }
+
+/* Boyut Kaydırıcısı (Range Slider) */
+.ytr-sizewrap { display: inline-flex; align-items: center; gap: 8px; }
+.ytr-range { width: 95px; accent-color: #f03; cursor: pointer; }
+.ytr-val { min-width: 36px; text-align: right; font-size: 12px; color: #aaa; font-variant-numeric: tabular-nums; }
+
+/* Durum ve İpucu */
+.ytr-status-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.ytr-status { font-size: 11px; color: rgba(255, 255, 255, .7); word-break: break-word; }
+.ytr-hint { margin-top: 4px; font-size: 10px; color: rgba(255, 255, 255, .4); line-height: 1.35; }

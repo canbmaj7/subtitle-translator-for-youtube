@@ -5,55 +5,124 @@
   let getSettings = () => ({}), setSetting = () => {};
   let btn = null, panel = null, refs = {};
 
-  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  };
+
+  // Açma/kapama anahtarı (toggle switch) oluşturur
+  function makeSwitch(onChange) {
+    const label = el('label', 'ytr-switch');
+    const input = el('input');
+    input.type = 'checkbox';
+    const slider = el('span', 'ytr-switch-slider');
+    label.append(input, slider);
+    if (onChange) input.addEventListener('change', onChange);
+    return { label, input };
+  }
 
   function makeIcon() {
     const svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('viewBox', '0 0 36 36');
-    svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
     const r = document.createElementNS(SVGNS, 'rect');
-    for (const [k, v] of Object.entries({ x: 7, y: 10, width: 22, height: 16, rx: 3, fill: 'none', stroke: 'currentColor', 'stroke-width': 2 })) r.setAttribute(k, v);
+    for (const [k, v] of Object.entries({ x: 7, y: 10, width: 22, height: 16, rx: 3, fill: 'none', stroke: 'currentColor', 'stroke-width': 2 })) {
+      r.setAttribute(k, v);
+    }
     const t = document.createElementNS(SVGNS, 'text');
-    for (const [k, v] of Object.entries({ x: 18, y: 22, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'currentColor', 'font-family': 'Roboto,Arial,sans-serif' })) t.setAttribute(k, v);
+    for (const [k, v] of Object.entries({ x: 18, y: 22, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'currentColor', 'font-family': 'Roboto,Arial,sans-serif' })) {
+      t.setAttribute(k, v);
+    }
     t.textContent = 'TR';
     svg.append(r, t);
+    refs.btnText = t;
     return svg;
+  }
+
+  function getTargetName(target) {
+    let name = target;
+    try {
+      const loc = (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()) || 'en';
+      const dn = new Intl.DisplayNames([loc], { type: 'language' });
+      name = dn.of(target) || target;
+    } catch (_) {}
+    return name;
   }
 
   function makeButton() {
     const b = el('button', 'ytp-button ytr-btn');
     b.type = 'button';
-    b.title = 'Türkçe çeviri (tıkla: aç/kapat · sağ tık: ayarlar)';
-    b.setAttribute('aria-label', 'Türkçe çeviri');
     b.appendChild(makeIcon());
     b.addEventListener('click', (e) => { e.stopPropagation(); setSetting('enabled', !getSettings().enabled); });
     b.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); togglePanel(); });
     return b;
   }
 
-  function row(label, input) {
-    const r = el('label', 'ytr-row');
-    r.append(el('span', null, label), input);
+  function row(labelText, input) {
+    const r = el('div', 'ytr-row');
+    const l = el('span', 'ytr-row-label', labelText);
+    r.append(l, input);
     return r;
   }
 
   function makePanel() {
     const p = el('div', 'ytr-panel');
     p.hidden = true;
-    const enabled = el('input'); enabled.type = 'checkbox';
-    const orig = el('input'); orig.type = 'checkbox';
-    const size = el('input'); size.type = 'range'; size.min = 60; size.max = 200; size.step = 10;
+
+    // Başlık ve motor etiketi
+    const header = el('div', 'ytr-header');
+    const title = el('div', 'ytr-title', ns.t('panelTitle'));
+    const chip = el('div', 'ytr-chip');
+    const chipDot = el('span', 'ytr-chip-dot');
+    const chipText = el('span', 'ytr-chip-text', ns.t('chipIdle'));
+    chip.append(chipDot, chipText);
+    header.append(title, chip);
+
+    // Çeviri aç/kapa
+    const swEnabled = makeSwitch(() => setSetting('enabled', swEnabled.input.checked));
+    const rEnabled = row(ns.t('rowTranslation'), swEnabled.label);
+
+    // Hedef dil seçimi
+    const select = el('select', 'ytr-select');
+    const langs = ns.LANGS || ['tr', 'en'];
+    for (const code of langs) {
+      const opt = el('option', null, ns.langLabel ? ns.langLabel(code) : code);
+      opt.value = code;
+      select.appendChild(opt);
+    }
+    select.addEventListener('change', () => setSetting('target', select.value));
+
+    // Orijinal metni göster
+    const swOrig = makeSwitch(() => setSetting('showOriginal', swOrig.input.checked));
+    const rOrig = row(ns.t('rowShowOriginal'), swOrig.label);
+
+    // Yazı boyutu
+    const size = el('input', 'ytr-range');
+    size.type = 'range'; size.min = 60; size.max = 200; size.step = 10;
     const sizeVal = el('span', 'ytr-val');
-    const sizeWrap = el('span', 'ytr-sizewrap'); sizeWrap.append(size, sizeVal);
-    enabled.addEventListener('change', () => setSetting('enabled', enabled.checked));
-    orig.addEventListener('change', () => setSetting('showOriginal', orig.checked));
+    const sizeWrap = el('div', 'ytr-sizewrap');
+    sizeWrap.append(size, sizeVal);
     size.addEventListener('input', () => setSetting('size', Number(size.value)));
-    const status = el('div', 'ytr-status', 'Motor: —');
-    p.append(el('div', 'ytr-title', 'YouTube Türkçe Altyazı'), row('Türkçe çeviriyi göster', enabled), row('Orijinal metni de göster', orig), row('Yazı boyutu', sizeWrap), status);
-    // Panel içindeki etkileşimler oynatıcıya (duraklat, kısayol vb.) ulaşmasın
-    for (const ev of ['click', 'dblclick', 'mousedown', 'mouseup', 'keydown', 'keyup', 'contextmenu', 'wheel'])
+    const rSize = row(ns.t('rowFontSize'), sizeWrap);
+
+    // Durum ve ipucu kutusu
+    const statusBox = el('div', 'ytr-status-box');
+    const status = el('div', 'ytr-status', ns.t('statusEngineNone'));
+    const hint = el('div', 'ytr-hint', ns.t('googleKeyHint'));
+    hint.hidden = true;
+    statusBox.append(status, hint);
+
+    p.append(header, rEnabled, row(ns.t('rowTargetLang'), select), rOrig, rSize, statusBox);
+
+    // Panel içi etkileşimlerin oynatıcıya sızmasını engelle
+    for (const ev of ['click', 'dblclick', 'mousedown', 'mouseup', 'keydown', 'keyup', 'keypress', 'contextmenu', 'wheel', 'pointerdown', 'pointerup']) {
       p.addEventListener(ev, (e) => e.stopPropagation());
-    refs = { enabled, orig, size, sizeVal, status };
+    }
+
+    Object.assign(refs, { enabled: swEnabled.input, orig: swOrig.input, target: select, size, sizeVal, status, hint, chip, chipText }); // btnText'i ezme
     return p;
   }
 
@@ -74,19 +143,34 @@
       else if (gear && gear.parentElement) gear.parentElement.insertBefore(btn, gear);
       else host.prepend(btn);
     }
-    if (!panel) { panel = makePanel(); if (pendingStatus) ns.setStatus(pendingStatus[0], pendingStatus[1]); }
+    if (!panel) {
+      panel = makePanel();
+      if (pendingStatus) ns.setStatus(pendingStatus[0], pendingStatus[1]);
+    }
     if (panel.parentElement !== player) player.appendChild(panel);
     refresh();
   }
 
   function refresh() {
     const s = getSettings();
-    if (btn) btn.classList.toggle('ytr-on', !!s.enabled);
+    const target = s.target || 'tr';
+    const langCode = target.split('-')[0].toUpperCase();
+    const targetName = getTargetName(target);
+
+    if (refs.btnText) refs.btnText.textContent = langCode;
+
+    if (btn) {
+      btn.classList.toggle('ytr-on', !!s.enabled);
+      btn.title = ns.t('btnTitle', [targetName]);
+      btn.setAttribute('aria-label', ns.t('btnAriaLabel', [targetName]));
+    }
+
     if (!refs.enabled) return;
     refs.enabled.checked = !!s.enabled;
     refs.orig.checked = !!s.showOriginal;
-    refs.size.value = s.size;
-    refs.sizeVal.textContent = s.size + '%';
+    if (refs.target && refs.target.value !== target) refs.target.value = target;
+    refs.size.value = s.size != null ? s.size : 100;
+    refs.sizeVal.textContent = (s.size != null ? s.size : 100) + '%';
   }
 
   ns.initUI = (getS, setS) => {
@@ -99,10 +183,34 @@
     }, true);
   };
   ns.refreshUI = refresh;
+
   let pendingStatus = null; // panel oluşmadan gelen bilgiyi sakla
   ns.setStatus = (engine, error) => {
     pendingStatus = [engine, error];
     if (!refs.status) return;
-    refs.status.textContent = engine ? 'Motor: ' + engine + (engine === 'Google' ? ' (anahtarsız — daha iyi çeviri için araç çubuğundan anahtar ekle)' : '') : (error ? 'Çeviri hatası: ' + error : 'Motor: —');
+
+    if (refs.chip && refs.chipText) {
+      refs.chip.className = 'ytr-chip';
+      if (engine) {
+        refs.chip.classList.add('ytr-engine-' + engine.toLowerCase());
+        refs.chipText.textContent = engine;
+      } else if (error) {
+        refs.chip.classList.add('ytr-engine-error');
+        refs.chipText.textContent = '!';
+      } else {
+        refs.chipText.textContent = ns.t('chipIdle');
+      }
+    }
+
+    if (engine) {
+      refs.status.textContent = ns.t('statusEngine', [engine]);
+      if (refs.hint) refs.hint.hidden = (engine !== 'Google');
+    } else if (error) {
+      refs.status.textContent = ns.t('statusError', [error]);
+      if (refs.hint) refs.hint.hidden = true;
+    } else {
+      refs.status.textContent = ns.t('statusEngineNone');
+      if (refs.hint) refs.hint.hidden = true;
+    }
   };
 })();

@@ -1,0 +1,78 @@
+{
+  "extName": {
+    "message": "YouTube Altyazı Çevirmeni",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "YouTube altyazılarını seçtiğiniz dile çevirir ve video üzerinde kusursuz bir şekilde gösterir.",
+    "description": "Extension description"
+  },
+  "btnTitle": {
+    "message": "$LANG$ çeviri (tıkla: aç/kapat · sağ tık: ayarlar)",
+    "description": "Tooltip for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnAriaLabel": {
+    "message": "$LANG$ çeviri",
+    "description": "Aria label for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "panelTitle": {
+    "message": "Altyazı Çevirmeni",
+    "description": "Title of settings panel"
+  },
+  "rowTranslation": {
+    "message": "Çeviri",
+    "description": "Label for translation toggle"
+  },
+  "rowTargetLang": {
+    "message": "Hedef dil",
+    "description": "Label for target language dropdown"
+  },
+  "rowShowOriginal": {
+    "message": "Orijinal metni göster",
+    "description": "Label for original text toggle"
+  },
+  "rowFontSize": {
+    "message": "Yazı boyutu",
+    "description": "Label for font size slider"
+  },
+  "statusEngine": {
+    "message": "Motor: $ENGINE$",
+    "description": "Current translation engine",
+    "placeholders": {
+      "engine": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusEngineNone": {
+    "message": "Motor: —",
+    "description": "No engine active yet"
+  },
+  "statusError": {
+    "message": "Çeviri hatası: $ERROR$",
+    "description": "Translation error message",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "googleKeyHint": {
+    "message": "Daha iyi çeviri için eklenti simgesinden API anahtarı ekleyebilirsiniz.",
+    "description": "Hint to add Gemini or Groq key"
+  },
+  "chipIdle": {
+    "message": "Boşta",
+    "description": "Idle status for engine chip"
+  }
+}

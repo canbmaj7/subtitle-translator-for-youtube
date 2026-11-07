@@ -8,13 +8,34 @@ class HttpError extends Error {
   constructor(status, body) { super('HTTP ' + status + ' ' + String(body || '').slice(0, 160)); this.status = status; }
 }
 
-const LANGS = { tr: 'Turkish' };
+// Hedef dilin İngilizce adı
+function getLangName(code) {
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code;
+  } catch (_) {
+    return code;
+  }
+}
+
+// Google GTX API dil kodu eşlemesi
+function mapGtxLang(code) {
+  if (!code || code === 'auto') return 'auto';
+  if (code === 'zh') return 'zh-CN';
+  if (code === 'zh-CN' || code === 'zh-TW') return code;
+  if (code.startsWith('zh-')) return 'zh-CN';
+  if (code === 'he') return 'iw';
+  if (code === 'no') return 'no';
+  if (code === 'pt-BR') return 'pt';
+  return code;
+}
+
 function systemPrompt(sl, tl) {
+  const langName = getLangName(tl);
   const src = sl && sl !== 'auto' ? `from the language with code "${sl}" ` : '';
   return [
-    `You are a professional subtitle translator. Translate video subtitles ${src}into natural, fluent spoken ${LANGS[tl] || tl}.`,
+    `You are a professional subtitle translator. Translate video subtitles ${src}into natural, fluent spoken ${langName}.`,
     'The user sends a JSON array of consecutive subtitle sentences. They come from speech recognition, so they may lack punctuation, split sentences oddly or contain recognition errors: use the surrounding sentences as context and fix obvious mistakes.',
-    'Translate ordinary words, titles and idioms into Turkish. Keep only person names, product names, code and widely used technical terms (e.g. Python, API, framework) in their original form.',
+    `Translate ordinary words, titles and idioms into ${langName}. Keep only person names, product names, code and widely used technical terms (e.g. Python, API, framework) in their original form.`,
     'Do not merge, split, reorder or skip items. Do not add explanations.',
     'Reply ONLY with JSON of the form {"translations": [...]} holding exactly as many strings as the input array, in the same order.',
   ].join('\n');
@@ -89,7 +110,9 @@ async function viaGroq(key, lines, sl, tl) {
 async function gtx(lines, sl, tl) {
   const body = new URLSearchParams();
   body.set('q', lines.join('\n'));
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl || 'auto')}&tl=${encodeURIComponent(tl)}&dt=t&dj=0`;
+  const gtxSl = mapGtxLang(sl);
+  const gtxTl = mapGtxLang(tl);
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(gtxSl || 'auto')}&tl=${encodeURIComponent(gtxTl)}&dt=t&dj=0`;
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
   if (!r.ok) throw new HttpError(r.status, '');
   const data = await r.json();

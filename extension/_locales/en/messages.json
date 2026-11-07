@@ -1,0 +1,78 @@
+{
+  "extName": {
+    "message": "YouTube Subtitle Translator",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Translates YouTube subtitles into your chosen language and overlays them seamlessly on videos.",
+    "description": "Extension description"
+  },
+  "btnTitle": {
+    "message": "$LANG$ translation (click: toggle · right-click: settings)",
+    "description": "Tooltip for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnAriaLabel": {
+    "message": "$LANG$ translation",
+    "description": "Aria label for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "panelTitle": {
+    "message": "Subtitle Translator",
+    "description": "Title of settings panel"
+  },
+  "rowTranslation": {
+    "message": "Translation",
+    "description": "Label for translation toggle"
+  },
+  "rowTargetLang": {
+    "message": "Target language",
+    "description": "Label for target language dropdown"
+  },
+  "rowShowOriginal": {
+    "message": "Show original text",
+    "description": "Label for original text toggle"
+  },
+  "rowFontSize": {
+    "message": "Font size",
+    "description": "Label for font size slider"
+  },
+  "statusEngine": {
+    "message": "Engine: $ENGINE$",
+    "description": "Current translation engine",
+    "placeholders": {
+      "engine": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusEngineNone": {
+    "message": "Engine: —",
+    "description": "No engine active yet"
+  },
+  "statusError": {
+    "message": "Translation error: $ERROR$",
+    "description": "Translation error message",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "googleKeyHint": {
+    "message": "Add an API key from the extension popup for higher quality translations.",
+    "description": "Hint to add Gemini or Groq key"
+  },
+  "chipIdle": {
+    "message": "Idle",
+    "description": "Idle status for engine chip"
+  }
+}

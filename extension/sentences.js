@@ -22,7 +22,7 @@
         }
       } else {
         const text = e.segs.map((s) => s.utf8 || '').join('').replace(/\s*\n\s*/g, ' ').trim();
-        const words = NOSPACE.test(lang) ? [text] : text.split(/\s+/);
+        const words = (ns.isCjk ? ns.isCjk(lang) : NOSPACE.test(lang)) ? [text] : text.split(/\s+/);
         const total = words.reduce((a, w) => a + w.length + 1, 0);
         let acc = 0;
         for (const w of words) {
@@ -42,17 +42,18 @@
     return tokens;
   }
 
-  // 2) Kelimeler -> cümleler
+  // 2) Kelimeler -> cümleler (toks ve join alanları ile)
   function buildSentences(events, lang) {
     const tokens = toTokens(events, lang);
-    const join = NOSPACE.test(lang) ? '' : ' ';
+    const join = (ns.isCjk ? ns.isCjk(lang) : NOSPACE.test(lang)) ? '' : ' ';
     const out = [];
     let cur = [];
     let len = 0;
     const flush = () => {
       if (!cur.length) return;
       const text = cur.map((k) => k.t).join(join);
-      out.push({ s: cur[0].s, e: cur[cur.length - 1].e, text, tr: null });
+      const toks = cur.map((k) => ({ t: k.t, s: k.s }));
+      out.push({ s: cur[0].s, e: cur[cur.length - 1].e, text, tr: null, toks, join });
       cur = []; len = 0;
     };
     tokens.forEach((k, i) => {
@@ -104,25 +105,40 @@
     return parts;
   }
 
-  // 4) Cümleler -> ekran parçaları ({s,e,t: orijinal, tr: çeviri|null})
+  // 4) Cümleler -> ekran parçaları ({s, e, t: orijinal, tr: çeviri|null})
   function toCues(sentences, maxChars) {
     const cues = [];
     for (const sn of sentences) {
       const shown = sn.tr || sn.text;
       const n = Math.max(1, Math.ceil(shown.length / maxChars));
       const main = splitInto(shown, n);
-      const orig = sn.tr ? splitInto(sn.text, main.length) : main;
       const total = main.reduce((a, p) => a + p.length + 1, 0);
       let acc = 0;
+      const origFallback = sn.tr ? splitInto(sn.text, main.length) : null;
       main.forEach((p, i) => {
         const s = sn.s + Math.round(((sn.e - sn.s) * acc) / total);
         acc += p.length + 1;
         const e = i === main.length - 1 ? sn.e : sn.s + Math.round(((sn.e - sn.s) * acc) / total);
-        if (p) cues.push({ s, e, t: orig[i] || '', tr: sn.tr ? p : null, _p: sn.tr ? null : p });
+        if (!p) return;
+        // Çeviri yoksa (bekleyen durum)
+        if (!sn.tr) {
+          cues.push({ s, e, t: p, tr: null });
+          return;
+        }
+        // Tek parçalı cümlelerde tüm orijinal metin gösterilir
+        if (main.length === 1) {
+          cues.push({ s, e, t: sn.text, tr: p });
+          return;
+        }
+        // Birden fazla parçada zaman aralığındaki kelimelerden birleştir
+        const winStart = i === 0 ? -Infinity : s;
+        const winEnd = i === main.length - 1 ? Infinity : e;
+        const words = (sn.toks || []).filter((w) => w.s >= winStart && w.s < winEnd);
+        const join = sn.join != null ? sn.join : ' ';
+        const t = words.length ? words.map((w) => w.t).join(join) : (origFallback[i] || '');
+        cues.push({ s, e, t, tr: p });
       });
     }
-    // Çevrilmemişlerde gösterilecek metin t olsun
-    cues.forEach((c) => { if (c._p != null) { c.t = c._p; delete c._p; } });
     return cues;
   }
 
