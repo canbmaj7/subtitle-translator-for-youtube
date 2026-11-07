@@ -43,9 +43,15 @@
     if (!p) return;
     if (e.data.type === 'ensureCaptions') {
       try {
-        const tracks = (p.getOption && p.getOption('captions', 'tracklist')) || [];
-        if (tracks.length && p.toggleSubtitlesOn) p.toggleSubtitlesOn();
-        window.postMessage({ source: TAG, type: 'ensureResult', tracks: tracks.length }, '*');
+        const pr = p.getPlayerResponse && p.getPlayerResponse();
+        const fromResp = (pr && pr.captions && pr.captions.playerCaptionsTracklistRenderer && pr.captions.playerCaptionsTracklistRenderer.captionTracks) || [];
+        const fromOpt = (p.getOption && p.getOption('captions', 'tracklist')) || [];
+        const tracks = Math.max(fromResp.length, fromOpt.length);
+        if (tracks) {
+          if (p.loadModule) p.loadModule('captions');
+          if (p.toggleSubtitlesOn) p.toggleSubtitlesOn();
+        }
+        window.postMessage({ source: TAG, type: 'ensureResult', tracks }, '*');
       } catch (_) {}
     }
   });

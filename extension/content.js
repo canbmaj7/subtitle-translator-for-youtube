@@ -85,10 +85,23 @@
       cur.push(c); len += c.text.length + 1;
     }
     if (cur.length) chunks.push(cur);
-    let next = 0;
+    chunks.forEach((c) => { c.s = c[0].s; c.e = c[c.length - 1].e; c.done = false; });
+    // Oynatma konumuna en yakın, henüz çevrilmemiş bölümü seç
+    const pickNext = () => {
+      const video = document.querySelector('#movie_player video');
+      const t = video ? video.currentTime * 1000 : 0;
+      let best = null, bestD = Infinity;
+      for (const c of chunks) {
+        if (c.done) continue;
+        const d = t < c.s ? c.s - t : t > c.e ? t - c.e : 0;
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      if (best) best.done = true;
+      return best;
+    };
     const worker = async () => {
-      while (next < chunks.length && key === state.key) {
-        const chunk = chunks[next++];
+      let chunk;
+      while (key === state.key && (chunk = pickNext())) {
         const res = await chrome.runtime.sendMessage({ type: 'translate', lines: chunk.map((c) => c.text), sl, tl: TARGET });
         if (key !== state.key) return;
         if (res && res.ok) { if (res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); } chunk.forEach((c, i) => { c.tr = (res.res[i] || '').trim() || c.text; }); rebuild(); }
@@ -159,11 +172,15 @@
     if (v && v === state.videoId && state.key) return;
     if (v !== state.videoId) resetFor(v, null);
     clearTimeout(state.ensureTimer);
-    // Oynatıcı kendiliğinden altyazı isteği yapmazsa (CC kapalı) açtır
-    state.ensureTimer = setTimeout(() => {
-      if (!state.key && location.pathname === '/watch' && settings.enabled)
-        window.postMessage({ source: TAG + '-cmd', type: 'ensureCaptions' }, '*');
-    }, 3500);
+    // Oynatıcı kendiliğinden altyazı isteği yapmazsa (CC kapalı) açtır; modül geç yüklenebilir, birkaç kez dene
+    let tries = 0;
+    const ensure = () => {
+      if (state.key || location.pathname !== '/watch' || !settings.enabled || tries >= 5) return;
+      tries++;
+      window.postMessage({ source: TAG + '-cmd', type: 'ensureCaptions' }, '*');
+      state.ensureTimer = setTimeout(ensure, 2500);
+    };
+    state.ensureTimer = setTimeout(ensure, 2500);
   }
   document.addEventListener('yt-navigate-finish', onNavigate);
   if (document.readyState !== 'loading') onNavigate();
