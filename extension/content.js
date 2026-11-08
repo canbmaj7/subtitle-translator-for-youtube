@@ -141,6 +141,7 @@
       return;
     }
 
+    if (YTR.setNote) YTR.setNote(null);
     const sentences = YTR.buildSentences(state.events, state.sl);
     state.sentences = sentences;
     rebuild();
