@@ -100,4 +100,5 @@ html.ytr-active .ytp-caption-window-container { opacity: 0 !important; pointer-e
 /* Durum ve İpucu */
 .ytr-status-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
 .ytr-status { font-size: 11px; color: rgba(255, 255, 255, .7); word-break: break-word; }
+.ytr-note { margin-bottom: 6px; font-size: 11px; color: #ffd27a; line-height: 1.35; }
 .ytr-hint { margin-top: 4px; font-size: 10px; color: rgba(255, 255, 255, .4); line-height: 1.35; }

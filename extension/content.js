@@ -86,6 +86,7 @@
       if (body && !tlang) { try { state.events = JSON.parse(body).events; } catch (_) {} }
       resetFor(v, null);
       state.skip = v;
+      if (YTR.setNote) YTR.setNote(tlang ? 'noteYtAuto' : 'noteSameLang');
       return;
     }
 
@@ -99,6 +100,7 @@
   }
 
   function resetFor(videoId, key) {
+    if (YTR.setNote) YTR.setNote(null);
     if (scheduler) { scheduler.stop(); scheduler = null; }
     if (waitCtrl) waitCtrl.reset();
     state.gen++; state.videoId = videoId; state.key = key; state.sentences = []; state.cues = []; state.idx = 0; state.progress = null;
@@ -133,6 +135,7 @@
 
     // Kaynak dil tabanı hedef dil tabanına eşitse katmanı kapat
     if (srcBase === targetBase) {
+      if (YTR.setNote) YTR.setNote('noteSameLang');
       deactivate();
       if (YTR.refreshUI) YTR.refreshUI();
       return;

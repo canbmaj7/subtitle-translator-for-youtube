@@ -139,7 +139,9 @@
     const status = el('div', 'ytr-status', ns.t('statusEngineNone'));
     const hint = el('div', 'ytr-hint', ns.t('googleKeyHint'));
     hint.hidden = true;
-    statusBox.append(status, hint);
+    const note = el('div', 'ytr-note');
+    note.hidden = true;
+    statusBox.append(note, status, hint);
 
     p.append(header, progBox, rEnabled, row(ns.t('rowTargetLang'), select), rOrig, rWait, rSize, statusBox);
 
@@ -150,7 +152,7 @@
 
     Object.assign(refs, {
       enabled: swEnabled.input, orig: swOrig.input, wait: swWait.input, target: select,
-      size, sizeVal, status, hint, chip, chipText, progBox, progText, progFill, retryBtn,
+      size, sizeVal, status, hint, note, chip, chipText, progBox, progText, progFill, retryBtn,
     });
     return p;
   }
@@ -177,6 +179,7 @@
       panel = makePanel();
       if (pendingStatus) ns.setStatus(pendingStatus[0], pendingStatus[1]);
       if (pendingProgress) ns.setProgress(pendingProgress);
+      ns.setNote(pendingNote);
     }
     if (panel.parentElement !== player) player.appendChild(panel);
     refresh();
@@ -244,6 +247,14 @@
     const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
     refs.progFill.style.width = pct + '%';
     refs.retryBtn.hidden = !(p.failed > 0);
+  };
+
+  let pendingNote = null;
+  ns.setNote = (key) => {
+    pendingNote = key;
+    if (!refs.note) return;
+    refs.note.hidden = !key;
+    refs.note.textContent = key ? ns.t(key) : '';
   };
 
   let pendingStatus = null; // panel oluşmadan gelen bilgiyi sakla

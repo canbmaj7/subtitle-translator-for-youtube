@@ -178,5 +178,13 @@
   "progressFailed": {
     "message": "$1 bölüm çevrilemedi",
     "description": "progressFailed"
+  },
+  "noteYtAuto": {
+    "message": "YouTube'un kendi çevirisi bu dilde açık, bu yüzden eklenti beklemede. YouTube altyazı ayarlarından orijinal altyazıyı seçin.",
+    "description": "Panel note"
+  },
+  "noteSameLang": {
+    "message": "Videonun altyazısı zaten hedef dilde, çevrilecek bir şey yok.",
+    "description": "Panel note"
   }
 }
