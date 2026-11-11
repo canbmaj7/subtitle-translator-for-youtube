@@ -77,11 +77,18 @@ async function routes(ctx, counters, geminiHandler) {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify([[[out, q]]]) });
   });
   await ctx.route('https://generativelanguage.googleapis.com/**', async (route) => {
-    counters.gemini++;
     const body = JSON.parse(route.request().postData() || '{}');
+    let user = null;
+    try { user = JSON.parse(body.contents[0].parts[0].text); } catch (_) { /* özet isteği düz metin olabilir */ }
+    const lines = user && (Array.isArray(user) ? user : user.lines);
+    if (!Array.isArray(lines)) {
+      // video özeti isteği: çeviri sayaçlarına karışmaz
+      counters.geminiSummary = (counters.geminiSummary || 0) + 1;
+      const text = JSON.stringify({ topic: 'Test video', domain: 'tech', tone: 'neutral', terms: ['React'] });
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }) });
+    }
+    counters.gemini++;
     counters.geminiBodies.push({ body, headers: route.request().headers(), url: route.request().url() });
-    const user = JSON.parse(body.contents[0].parts[0].text);
-    const lines = Array.isArray(user) ? user : user.lines;
     const text = JSON.stringify({ translations: lines.map((l) => 'AI:' + l) });
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }) });
   });

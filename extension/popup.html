@@ -213,6 +213,18 @@
     <p class="privacy-note" data-i18n="privacyNote">Keys are stored locally in this browser and never synced. Under Gemini's free tier, submitted subtitle text may be used by Google for product improvement.</p>
   </section>
 
+  <!-- Glossary Card -->
+  <section class="card" aria-labelledby="card-glossary-title">
+    <div class="field-header">
+      <h2 class="card-title" id="card-glossary-title" data-i18n="cardGlossaryTitle">Glossary</h2>
+      <span class="glossary-counter" id="glossary-counter">0/50</span>
+    </div>
+    <p class="card-desc" data-i18n="cardGlossaryDesc">Custom term translations (max 50). Examples: "framework" (keep untranslated), "framework = translation".</p>
+    <div class="glossary-wrap">
+      <textarea id="glossary" class="custom-textarea" rows="4" spellcheck="false" autocomplete="off" data-i18n-placeholder="placeholderGlossary" placeholder="framework&#10;framework = translation"></textarea>
+    </div>
+  </section>
+
   <!-- Bottom Info / Status Bar -->
   <footer class="footer-bar" id="footer-bar">
     <span class="footer-dot" id="footer-dot"></span>
@@ -223,5 +235,6 @@
   <script src="ui-pages.js"></script>
   <script src="popup-logic.js"></script>
   <script src="popup.js"></script>
+  <script src="popup-glossary.js"></script>
 </body>
 </html>

@@ -462,5 +462,17 @@
   "cmdToggleTranslation": {
     "message": "Çeviriyi aç/kapa",
     "description": "Keyboard shortcut to toggle translation"
+  },
+  "cardGlossaryTitle": {
+    "message": "Terim sözlüğü",
+    "description": "Glossary card title"
+  },
+  "cardGlossaryDesc": {
+    "message": "Özel terim çevirileri (en fazla 50). Satır örnekleri: \"framework\" (olduğu gibi bırak), \"framework = çerçeve\".",
+    "description": "Glossary card description"
+  },
+  "placeholderGlossary": {
+    "message": "framework\nframework = çerçeve",
+    "description": "Placeholder for glossary textarea"
   }
 }

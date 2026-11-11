@@ -99,9 +99,85 @@
     return { engine: issue.engine, code: issue.code, msgKey: issue.msgKey, text: (issue.engine ? issue.engine + ': ' : '') + tr(issue.msgKey) };
   }
 
+  function sanitizeGlossaryField(val, maxLen = 60) {
+    if (val == null) return '';
+    let s = String(val);
+    s = s.replace(/[<>]/g, '');
+    s = s.replace(/[\x00-\x1f\x7f-\x9f]/g, ' ');
+    s = s.replace(/\s+/g, ' ').trim();
+    if (s.length > maxLen) {
+      s = s.slice(0, maxLen).trim();
+    }
+    return s;
+  }
+
+  function parseGlossaryText(text) {
+    if (!text || typeof text !== 'string') return [];
+    const lines = text.split(/\r?\n/);
+    const out = [];
+    const seen = new Set();
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      const eqIdx = line.indexOf('=');
+      const rawSrc = eqIdx === -1 ? line : line.slice(0, eqIdx);
+      const rawDst = eqIdx === -1 ? '' : line.slice(eqIdx + 1);
+
+      const src = sanitizeGlossaryField(rawSrc, 60);
+      if (!src) continue;
+
+      const key = src.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const dst = eqIdx === -1 ? '' : sanitizeGlossaryField(rawDst, 60);
+      if (dst) {
+        out.push({ src, dst });
+      } else {
+        out.push({ src });
+      }
+
+      if (out.length >= 50) break;
+    }
+
+    return out;
+  }
+
+  function glossaryToText(list) {
+    if (!Array.isArray(list)) return '';
+    const lines = [];
+    for (const item of list) {
+      if (!item || typeof item !== 'object') continue;
+      const src = sanitizeGlossaryField(item.src, 60);
+      if (!src) continue;
+      const dst = item.dst != null ? sanitizeGlossaryField(item.dst, 60) : '';
+      if (dst) {
+        lines.push(`${src} = ${dst}`);
+      } else {
+        lines.push(src);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  function formatGlossaryCount(count, max = 50) {
+    const n = typeof count === 'number' && Number.isFinite(count) ? Math.max(0, count) : 0;
+    const m = typeof max === 'number' && Number.isFinite(max) ? Math.max(0, max) : 50;
+    return `${n}/${m}`;
+  }
+
+  function updateGlossaryCounter(el, count, max = 50) {
+    const str = formatGlossaryCount(count, max);
+    if (el) el.textContent = str;
+    return str;
+  }
+
   const popupApi = {
     POPUP_BADGE_MAP, popupKeyBadge, decideKeyAction, engineOptionState, formatEngineIssue,
     parseCustomEndpoint, normalizeGeminiModel, shouldShowCustomFields, shouldShowGeminiQuality,
+    parseGlossaryText, glossaryToText, formatGlossaryCount, updateGlossaryCounter,
   };
   ns.popup = popupApi;
   if (typeof module !== 'undefined') module.exports = popupApi;

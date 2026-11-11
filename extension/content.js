@@ -4,7 +4,7 @@
   const log = (...a) => console.log('[YTR]', ...a);
   const baseLang = (c) => (c || '').split('-')[0].toLowerCase();
 
-  const state = { gen: 0, videoId: null, key: null, rawUrl: null, events: null, sl: null, sentences: [], cues: [], idx: 0, raf: 0, ensureTimer: 0, engine: '', progress: null };
+  const state = { gen: 0, videoId: null, key: null, rawUrl: null, events: null, sl: null, sentences: [], cues: [], idx: 0, raf: 0, ensureTimer: 0, engine: '', progress: null, summary: null };
   let lastShown = null;
   let settingsLoaded = false, pendingTimedText = null;
   let settings = { enabled: true, showOriginal: false, size: 100, bgOpacity: 78, textColor: 'white', origPosition: 'below', target: YTR.defaultTarget(), waitForTranslation: false };
@@ -104,6 +104,7 @@
     if (YTR.setNote) YTR.setNote(null);
     if (scheduler) { scheduler.stop(); scheduler = null; }
     if (waitCtrl) waitCtrl.reset();
+    if (state.videoId !== videoId) state.summary = null;
     state.gen++; state.videoId = videoId; state.key = key; state.sentences = []; state.cues = []; state.idx = 0; state.progress = null;
     if (YTR.setProgress) YTR.setProgress(null);
     if (YTR.onTranscriptUpdate) YTR.onTranscriptUpdate();
@@ -126,8 +127,36 @@
     }
   }
 
+  async function fetchSummary(videoId, sentences, curGen) {
+    if (state.summary) return;
+    if (!videoId || typeof videoId !== 'string' || !/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return;
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id || !chrome.storage) return;
+    try {
+      const [sy, lo] = await Promise.all([
+        chrome.storage.sync.get({ engine: 'auto' }),
+        chrome.storage.local.get({ keyStatus: {} }),
+      ]);
+      const wantsAI = YTR.cache && YTR.cache.wantsAI;
+      if (!wantsAI || !wantsAI(String((sy && sy.engine) || 'auto').toLowerCase(), lo && lo.keyStatus)) return;
+      if (curGen !== state.gen || state.videoId !== videoId) return;
+
+      let timer;
+      const req = chrome.runtime.sendMessage({
+        type: 'summarize',
+        videoId,
+        meta: getVideoMeta(),
+        sample: sentences.slice(0, 60).map((s) => s.text),
+      });
+      const timeout = new Promise((ok) => { timer = setTimeout(() => ok(null), 4000); });
+      const res = await Promise.race([req, timeout]).finally(() => clearTimeout(timer));
+      if (curGen === state.gen && state.videoId === videoId && res && res.ok && res.summary) {
+        state.summary = res.summary;
+      }
+    } catch (_) {}
+  }
+
   // Ham olaylardan cümle ve çeviri akışını başlatır
-  function process() {
+  async function process() {
     const curGen = ++state.gen;
     if (scheduler) { scheduler.stop(); scheduler = null; }
     if (waitCtrl) waitCtrl.reset();
@@ -153,6 +182,9 @@
     if (YTR.onTranscriptUpdate) YTR.onTranscriptUpdate();
     if (YTR.refreshUI) YTR.refreshUI();
 
+    await fetchSummary(state.videoId, sentences, curGen);
+    if (curGen !== state.gen || !settings.enabled) return;
+
     if (YTR.createScheduler) {
       scheduler = YTR.createScheduler({
         sentences, sl: state.sl, target, gen: curGen,
@@ -171,6 +203,7 @@
               meta,
               before,
               after,
+              summary: state.summary,
             });
           } catch (err) {
             const msg = String(err && err.message ? err.message : err);
@@ -294,7 +327,7 @@
     const v = new URLSearchParams(location.search).get('v');
     if (v && v === state.videoId && state.key) return;
     if (v !== state.videoId) {
-      state.events = null; state.sl = null; state.rawUrl = null; state.skip = null;
+      state.events = null; state.sl = null; state.rawUrl = null; state.skip = null; state.summary = null;
       resetFor(v, null);
     }
     clearTimeout(state.ensureTimer);

@@ -462,5 +462,17 @@
   "cmdToggleTranslation": {
     "message": "Toggle translation on/off",
     "description": "Keyboard shortcut to toggle translation"
+  },
+  "cardGlossaryTitle": {
+    "message": "Glossary",
+    "description": "Glossary card title"
+  },
+  "cardGlossaryDesc": {
+    "message": "Custom term translations (max 50). Examples: \"framework\" (keep untranslated), \"framework = translation\".",
+    "description": "Glossary card description"
+  },
+  "placeholderGlossary": {
+    "message": "framework\nframework = translation",
+    "description": "Placeholder for glossary textarea"
   }
 }

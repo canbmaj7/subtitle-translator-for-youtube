@@ -223,6 +223,7 @@ const keysToCheck = [
   'rowOrigPosition', 'origPosAbove', 'origPosBelow',
   'searchPlaceholder', 'transcriptEmpty', 'transcriptNoMatch',
   'btnCopy', 'msgCopied', 'btnDownloadSrt', 'btnDownloadTxt',
+  'cardGlossaryTitle', 'cardGlossaryDesc', 'placeholderGlossary',
 ];
 for (const k of keysToCheck) {
   assert.ok(en[k] && en[k].message, `en messages.json içinde ${k} eksik`);
@@ -354,4 +355,91 @@ assert.deepEqual(POPUP.popupKeyBadge('custom', 'sk-test', { custom: { state: 'pe
   visible: true, state: 'permission', msgKey: 'keyBadgePermission', tone: 'orange',
 });
 
-console.log('13/13 arayüz testi geçti');
+// 14) Terim sözlüğü ayrıştırma (parseGlossaryText): kırpma, = ayırma, boş satır, ≤60 karakter, <> temizliği, 50 sınırı, yineleme
+// a) = ayırma: dst yoksa olduğu gibi bırak ({ src }), varsa { src, dst }
+assert.deepEqual(POPUP.parseGlossaryText('framework'), [{ src: 'framework' }]);
+assert.deepEqual(POPUP.parseGlossaryText('framework = çerçeve'), [{ src: 'framework', dst: 'çerçeve' }]);
+assert.deepEqual(POPUP.parseGlossaryText('framework ='), [{ src: 'framework' }]);
+assert.deepEqual(POPUP.parseGlossaryText('framework =   '), [{ src: 'framework' }]);
+assert.deepEqual(POPUP.parseGlossaryText('formula = a = b'), [{ src: 'formula', dst: 'a = b' }]);
+
+// b) kırpma: baştaki, sondaki ve = etrafındaki boşluklar kırpılır
+assert.deepEqual(POPUP.parseGlossaryText('   machine learning   =   makine öğrenimi   '), [
+  { src: 'machine learning', dst: 'makine öğrenimi' },
+]);
+assert.deepEqual(POPUP.parseGlossaryText('  \tReact\t  '), [{ src: 'React' }]);
+
+// c) boş satır: ardışık ve baştaki/sondaki boş satırlar atılır, boş/geçersiz girdide []
+assert.deepEqual(POPUP.parseGlossaryText('\n\n  \nframework = çerçeve\n\n\nlibrary\n   \n\n'), [
+  { src: 'framework', dst: 'çerçeve' },
+  { src: 'library' },
+]);
+assert.deepEqual(POPUP.parseGlossaryText(''), []);
+assert.deepEqual(POPUP.parseGlossaryText('   \n  \t  \n  '), []);
+assert.deepEqual(POPUP.parseGlossaryText(null), []);
+assert.deepEqual(POPUP.parseGlossaryText(undefined), []);
+
+// d) alan ≤60 karakter: 60 karakterden uzun src ve dst kırpılır
+const longSrc = 'a'.repeat(80);
+const longDst = 'b'.repeat(80);
+assert.deepEqual(POPUP.parseGlossaryText(`${longSrc} = ${longDst}`), [
+  { src: 'a'.repeat(60), dst: 'b'.repeat(60) },
+]);
+
+// e) <> temizliği: < ve > karakterleri temizlenir, boş kalırsa satır/dst atılır
+assert.deepEqual(POPUP.parseGlossaryText('<Kubernetes> = <K8s>'), [{ src: 'Kubernetes', dst: 'K8s' }]);
+assert.deepEqual(POPUP.parseGlossaryText('<FastAPI>'), [{ src: 'FastAPI' }]);
+assert.deepEqual(POPUP.parseGlossaryText('<<<Vue>>> = >>>UI<<<'), [{ src: 'Vue', dst: 'UI' }]);
+assert.deepEqual(POPUP.parseGlossaryText('<> = hedef'), []);
+assert.deepEqual(POPUP.parseGlossaryText('kaynak = <>'), [{ src: 'kaynak' }]);
+
+// f) 50 sınırı: 50'den fazla kayıt girildiğinde ilk 50'si alınır
+const sixtyLines = Array.from({ length: 60 }, (_, i) => `term${i} = val${i}`).join('\n');
+const parsed50 = POPUP.parseGlossaryText(sixtyLines);
+assert.equal(parsed50.length, 50, 'En fazla 50 kayıt alınmalı');
+assert.equal(parsed50[0].src, 'term0');
+assert.equal(parsed50[49].src, 'term49');
+
+// g) yineleme: yinelenen src tek kayıt olarak korunur (ilk kayıt kalır)
+assert.deepEqual(POPUP.parseGlossaryText('framework = çerçeve\nframework = çatı\nFRAMEWORK = başka'), [
+  { src: 'framework', dst: 'çerçeve' },
+]);
+
+// 15) Terim sözlüğü metne dönüştürme ve gidiş-dönüş (glossaryToText)
+assert.equal(
+  POPUP.glossaryToText([{ src: 'framework' }, { src: 'library', dst: 'kütüphane' }]),
+  'framework\nlibrary = kütüphane'
+);
+assert.equal(POPUP.glossaryToText([]), '');
+assert.equal(POPUP.glossaryToText(null), '');
+assert.equal(POPUP.glossaryToText(undefined), '');
+
+// Gidiş-dönüş (round-trip): parse -> toText -> parse ve toText -> parse -> toText
+const testEntries = [
+  { src: 'Kubernetes' },
+  { src: 'FastAPI', dst: 'HızlıAPI' },
+  { src: 'Prompt Engineering', dst: 'İstem Mühendisliği' },
+];
+const textFromEntries = POPUP.glossaryToText(testEntries);
+assert.deepEqual(POPUP.parseGlossaryText(textFromEntries), testEntries);
+assert.equal(POPUP.glossaryToText(POPUP.parseGlossaryText(textFromEntries)), textFromEntries);
+
+// 16) Terim sözlüğü sayacı (formatGlossaryCount / updateGlossaryCounter)
+assert.equal(POPUP.formatGlossaryCount(0), '0/50');
+assert.equal(POPUP.formatGlossaryCount(5), '5/50');
+assert.equal(POPUP.formatGlossaryCount(50), '50/50');
+assert.equal(POPUP.formatGlossaryCount(null), '0/50');
+assert.equal(POPUP.formatGlossaryCount(-3), '0/50');
+
+const mockEl = { textContent: '' };
+const counterRes = POPUP.updateGlossaryCounter(mockEl, 12, 50);
+assert.equal(counterRes, '12/50');
+assert.equal(mockEl.textContent, '12/50');
+
+// popup-glossary modül kontrolü
+const GLOSS = require(ext('popup-glossary.js'));
+assert.equal(typeof GLOSS.parseGlossaryText, 'function');
+assert.equal(typeof GLOSS.glossaryToText, 'function');
+assert.equal(typeof GLOSS.updateGlossaryCounter, 'function');
+
+console.log('16/16 arayüz testi geçti');

@@ -237,3 +237,18 @@ label.row { cursor: pointer; }
     transition: none !important;
   }
 }
+
+/* Terim Sözlüğü Alanı */
+.glossary-wrap { margin-top: 4px; }
+.custom-textarea {
+  width: 100%; min-height: 68px; max-height: 160px; padding: 6px 8px;
+  background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border);
+  border-radius: 3px; font-size: 11.5px; font-family: var(--font-mono); line-height: 1.4;
+  outline: none; resize: vertical; transition: border-color .12s ease;
+}
+.custom-textarea:focus-visible { border-color: var(--border-focus); outline: 2px solid var(--border-focus); outline-offset: 1px; }
+.custom-textarea::placeholder { color: var(--text-secondary); opacity: .6; }
+.glossary-counter {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  color: var(--text-secondary); font-variant-numeric: tabular-nums;
+}
