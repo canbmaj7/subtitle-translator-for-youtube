@@ -160,7 +160,7 @@
     "description": "Note shown next to engine without API key in popup"
   },
   "privacyNote": {
-    "message": "Keys are stored locally in this browser and never synced. Under Gemini's free tier, submitted subtitle text may be used by Google for product improvement.",
+    "message": "Keys are stored locally in this browser and never synced. With a Gemini or Groq key, the subtitle text plus the video title, channel name, a short description excerpt and nearby sentences are sent to that provider as context. Under Gemini's free tier, submitted content may be used by Google for product improvement.",
     "description": "Privacy note for API keys"
   },
   "infoDefault": {
