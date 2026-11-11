@@ -199,6 +199,10 @@
     "message": "YouTube'un kendi çevirisi bu dilde açık, bu yüzden eklenti beklemede. YouTube altyazı ayarlarından orijinal altyazıyı seçin.",
     "description": "Panel note"
   },
+  "toastFirstHint": {
+    "message": "Tıkla: çeviriyi aç/kapa · Sağ tık: ayarlar",
+    "description": "One-time tip shown near the player button on first use"
+  },
   "noteReloadPage": {
     "message": "Eklenti güncellendi. Çeviriye devam etmek için sayfayı yenileyin.",
     "description": "Shown when the extension was updated while the page was open"

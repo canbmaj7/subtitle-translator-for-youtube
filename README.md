@@ -30,6 +30,8 @@ Translates YouTube captions into your preferred language and overlays them seaml
 ### Translation & AI Engines
 - **Works out of the box:** Default Google Translate endpoint requires no API keys or setup.
 - **AI-powered translations:** Add your free **Google Gemini** ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) or **Groq** ([console.groq.com/keys](https://console.groq.com/keys)) key in the extension popup for higher-quality, natural translations.
+- **Translation cache:** Already translated caption chunks are stored on your device and reused, so reopening a video costs no extra API calls or quota. A Google-translated chunk is not reused once you have a working AI key, so quality can improve later.
+- **First-use tip:** A one-time hint explains that left click toggles translation and right click opens settings.
 - **Context-aware translation (AI engines only):** Video title, channel name, a short description excerpt and neighbouring sentences are passed to Gemini/Groq to pick domain terminology and fix speech-recognition errors; never sent to Google Translate.
 - **Automatic key validation:** When you paste an API key into the popup, it is immediately tested against the provider's API. Live status badges indicate `Valid`, `Invalid`, `Quota exceeded`, or `Network error`.
 
@@ -92,6 +94,9 @@ node tests/engine.test.cjs      # Translation engines, fallbacks, and timeouts
 node tests/sentences.test.cjs   # Sentence merging, alignment, and language heuristics
 node tests/transcript.test.cjs  # Transcript parsing, timestamping, SRT/TXT export
 node tests/ui.test.cjs          # UI state, badge mapping, appearance clamping, and i18n keys
+node tests/scheduler.test.cjs   # Chunking and neighbouring-sentence context
+node tests/cache.test.cjs       # Translation cache: keys, LRU eviction, engine quality rules
+node tests/e2e.cjs              # Real extension in a mock YouTube page (needs Playwright + Chromium)
 node scripts/check-store.cjs    # Manifest, icons, permissions, secrets, and store hygiene
 bash scripts/package.sh         # Package for Chrome/Edge (dist/subtitle-translator-<version>.zip)
 node scripts/build-firefox.cjs  # Package for Firefox (dist/subtitle-translator-<version>-firefox.zip)
@@ -103,7 +108,6 @@ Store submission guides: [`docs/store/`](docs/store/).
 
 ## Roadmap
 
-- Translation cache (reduce redundant API calls for previously translated video segments)
 - End-to-end automated testing and live Firefox testing
 - Speech recognition (on-the-fly captioning for videos lacking native subtitles)
 - Chrome Web Store release

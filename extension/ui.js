@@ -40,7 +40,7 @@
     } catch (_) { return target; }
   }
 
-  function showToast(text) {
+  function showToast(text, ms) {
     const player = document.getElementById('movie_player');
     if (!player) return;
     if (!toast) {
@@ -55,7 +55,18 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
       if (toast) { toast.classList.remove('ytr-toast-on'); toast.hidden = true; }
-    }, 1500);
+    }, ms || 1500);
+  }
+
+  // Yeni kullanıcıya bir kez: sol tık ve sağ tık ne yapar
+  function showFirstHint() {
+    try {
+      chrome.storage.local.get({ hintSeen: false }, (r) => {
+        if (r && r.hintSeen) return;
+        chrome.storage.local.set({ hintSeen: true });
+        setTimeout(() => showToast(ns.t('toastFirstHint'), 6000), 2500);
+      });
+    } catch (_) {}
   }
 
   function quickToggleEnabled() {
@@ -171,7 +182,7 @@
     const host = document.querySelector('.ytp-right-controls');
     const player = document.getElementById('movie_player');
     if (!host || !player) return;
-    if (!btn) btn = makeButton();
+    if (!btn) { btn = makeButton(); showFirstHint(); }
     if (!btn.isConnected || !host.contains(btn)) {
       const cc = host.querySelector('.ytp-subtitles-button');
       const gear = host.querySelector('.ytp-settings-button');
@@ -234,7 +245,9 @@
   ns.initUI = (getS, setS) => {
     getSettings = getS; setSetting = setS;
     bindStorage();
-    setInterval(ensure, 1000);
+    // Eklenti yenilenince/güncellenince bu betik yetim kalır: chrome.* hata fırlatır, döngüyü durdur
+    const alive = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; } };
+    const timer = setInterval(() => { if (!alive()) { clearInterval(timer); return; } ensure(); }, 1000);
     ensure();
     document.addEventListener('click', (e) => {
       if (panel && !panel.hidden && !panel.contains(e.target) && !(btn && btn.contains(e.target))) togglePanel(false);

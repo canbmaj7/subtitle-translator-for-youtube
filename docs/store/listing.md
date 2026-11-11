@@ -44,6 +44,7 @@ Translate the captions of the YouTube video being watched into the user's chosen
 
 ## What Changed in 0.6.0 (Release Notes)
 - Context-aware translation: with a Gemini or Groq key, the video title, channel and nearby sentences help the AI pick the right terminology.
+- Translation cache: already translated caption chunks are reused from local storage, so reopening a video costs no extra API calls.
 - Redesigned player button: Left-click opens the settings panel; right-click or Shift+click toggles translation on/off with an on-screen toast.
 - YouTube gear-style settings menu with sub-pages: Language, Translation engine, Transcript, Appearance, and Advanced.
 - Translation engine selection (Auto, Google Translate, Gemini, Groq) with clear error reporting (no silent fallback when a specific engine fails).

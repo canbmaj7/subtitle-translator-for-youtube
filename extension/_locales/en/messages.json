@@ -199,6 +199,10 @@
     "message": "YouTube's own translation to this language is on, so the extension stays idle. Pick the original captions in YouTube's CC settings.",
     "description": "Panel note"
   },
+  "toastFirstHint": {
+    "message": "Click: translation on/off · Right-click: settings",
+    "description": "One-time tip shown near the player button on first use"
+  },
   "noteReloadPage": {
     "message": "Extension was updated. Reload this page to keep translating.",
     "description": "Shown when the extension was updated while the page was open"

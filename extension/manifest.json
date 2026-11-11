@@ -37,6 +37,8 @@
         "transcript.js",
         "scheduler.js",
         "wait.js",
+        "meta.js",
+        "cache.js",
         "ui-appearance.js",
         "ui-transcript.js",
         "ui-pages.js",

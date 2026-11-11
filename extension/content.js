@@ -15,44 +15,8 @@
     getProgress: () => state.progress,
   }) : null;
 
-  const getVideoTitle = () => {
-    const docTitle = (typeof document !== 'undefined' && document.title ? document.title : '').replace(/^\(\d+\)\s*/, '').replace(/\s*-\s*YouTube\s*$/i, '').trim();
-    const n = typeof document !== 'undefined' ? document.querySelector('#movie_player .ytp-title-link, h1.ytd-watch-metadata yt-formatted-string') : null;
-    const domTitle = (n && n.textContent && n.textContent.trim()) || '';
-    if (domTitle && docTitle) {
-      const d1 = domTitle.toLowerCase();
-      const d2 = docTitle.toLowerCase();
-      if (d1 !== d2 && !d2.includes(d1) && !d1.includes(d2)) return docTitle;
-      return domTitle;
-    }
-    return domTitle || docTitle || state.videoId || 'video';
-  };
-  const getVideoMeta = () => {
-    if (typeof document === 'undefined') return { title: '', channel: '', description: '' };
-    let title = getVideoTitle();
-    if (title === state.videoId || title === 'video') title = '';
-    let channel = '';
-    try {
-      const ch = document.querySelector('ytd-video-owner-renderer #channel-name a, #owner #channel-name a');
-      channel = (ch && ch.textContent && ch.textContent.trim()) || '';
-      if (!channel) {
-        const link = document.querySelector('link[itemprop="name"]');
-        channel = (link && (link.getAttribute('content') || link.textContent) && (link.getAttribute('content') || link.textContent).trim()) || '';
-      }
-    } catch (_) {}
-    let description = '';
-    try {
-      const meta = document.querySelector('meta[property="og:description"]');
-      description = (meta && meta.getAttribute('content')) || '';
-      if (!description || !description.trim()) {
-        const inner = document.querySelector('#description-inner');
-        description = (inner && inner.textContent) || '';
-      }
-      description = description.trim().slice(0, 400);
-    } catch (_) {}
-    return { title: title || '', channel: channel || '', description: description || '' };
-  };
-  YTR.getVideoMeta = getVideoMeta;
+  const getVideoTitle = () => YTR.getVideoTitle(state.videoId);
+  const getVideoMeta = () => YTR.getVideoMeta(state.videoId);
   YTR.getTranscript = () => ({ sentences: state.sentences, sl: state.sl, title: getVideoTitle() });
   YTR.retryFailed = () => { if (scheduler) scheduler.retryFailed(); };
 
@@ -194,7 +158,7 @@
         sentences, sl: state.sl, target, gen: curGen,
         getGen: () => state.gen,
         getPlayheadMs: () => { const v = document.querySelector('#movie_player video'); return v ? v.currentTime * 1000 : 0; },
-        send: async (lines, ctx) => {
+        send: (YTR.withCache || ((f) => f))(async (lines, ctx) => {
           const meta = getVideoMeta();
           const before = (ctx && Array.isArray(ctx.before)) ? ctx.before : [];
           const after = (ctx && Array.isArray(ctx.after)) ? ctx.after : [];
@@ -218,7 +182,7 @@
             }
             return { ok: false, error: msg };
           }
-        },
+        }, () => ({ sl: state.sl, tl: target })),
         onChunkDone: (_chunk, res) => {
           if (res && res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); }
           rebuild();
