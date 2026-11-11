@@ -199,6 +199,10 @@
     "message": "YouTube'un kendi çevirisi bu dilde açık, bu yüzden eklenti beklemede. YouTube altyazı ayarlarından orijinal altyazıyı seçin.",
     "description": "Panel note"
   },
+  "noteReloadPage": {
+    "message": "Eklenti güncellendi. Çeviriye devam etmek için sayfayı yenileyin.",
+    "description": "Shown when the extension was updated while the page was open"
+  },
   "noteSameLang": {
     "message": "Videonun altyazısı zaten hedef dilde, çevrilecek bir şey yok.",
     "description": "Panel note"

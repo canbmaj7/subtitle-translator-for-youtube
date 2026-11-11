@@ -18,6 +18,12 @@
         if (msg) return msg;
       }
     } catch (_) {}
+    // Eklenti güncellenip sayfa eski kalınca chrome.i18n çalışmaz: yalnızca bu uyarı için yedek metin
+    if (key === 'noteReloadPage') {
+      return /^tr/i.test((typeof navigator !== 'undefined' && navigator.language) || '')
+        ? 'Eklenti güncellendi. Çeviriye devam etmek için sayfayı yenileyin.'
+        : 'Extension was updated. Reload this page to keep translating.';
+    }
     return key;
   };
 

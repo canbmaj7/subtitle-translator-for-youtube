@@ -199,6 +199,10 @@
     "message": "YouTube's own translation to this language is on, so the extension stays idle. Pick the original captions in YouTube's CC settings.",
     "description": "Panel note"
   },
+  "noteReloadPage": {
+    "message": "Extension was updated. Reload this page to keep translating.",
+    "description": "Shown when the extension was updated while the page was open"
+  },
   "noteSameLang": {
     "message": "The video's captions are already in the target language, so there is nothing to translate.",
     "description": "Panel note"

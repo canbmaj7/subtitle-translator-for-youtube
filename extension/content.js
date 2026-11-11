@@ -209,7 +209,14 @@
               after,
             });
           } catch (err) {
-            return { ok: false, error: String(err && err.message ? err.message : err) };
+            const msg = String(err && err.message ? err.message : err);
+            // Eklenti yenilendi/güncellendi ve bu sayfadaki betik yetim kaldı: boşuna yeniden deneme
+            if (!(chrome.runtime && chrome.runtime.id) || /context invalidated/i.test(msg)) {
+              if (scheduler) { scheduler.stop(); scheduler = null; }
+              if (YTR.setProgress) YTR.setProgress(null);
+              if (YTR.setNote) YTR.setNote('noteReloadPage');
+            }
+            return { ok: false, error: msg };
           }
         },
         onChunkDone: (_chunk, res) => {
