@@ -1,9 +1,17 @@
 // Çeviri motorları (arka plan). Anahtarlar yalnızca burada okunur; sayfa/content script görmez.
-// Sıra: Gemini -> Groq -> Google çeviri (anahtarsız son çare).
-const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite'];
+// Sıra: Gemini -> Groq -> Custom -> Google çeviri (anahtarsız son çare).
+const GEMINI_MODELS_FAST = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite'];
+const GEMINI_MODELS_BALANCED = ['gemini-flash-latest', 'gemini-2.5-flash', ...GEMINI_MODELS_FAST];
+const GEMINI_MODELS_QUALITY = ['gemini-pro-latest', 'gemini-2.5-pro', ...GEMINI_MODELS_BALANCED];
+const GEMINI_TIERS = {
+  fast: GEMINI_MODELS_FAST,
+  balanced: GEMINI_MODELS_BALANCED,
+  quality: GEMINI_MODELS_QUALITY,
+};
+const GEMINI_MODELS = GEMINI_MODELS_FAST;
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const INVALID_KEY_RE = /API_KEY_INVALID|API key not valid|invalid_api_key|invalid.*key|key.*invalid/i;
-const VALID_CODES = new Set(['nokey', 'invalid', 'quota', 'network', 'timeout', 'server', 'mismatch', 'unknown']);
+const VALID_CODES = new Set(['nokey', 'invalid', 'quota', 'network', 'timeout', 'server', 'mismatch', 'unknown', 'permission']);
 const cooldown = {}; // motor -> yeniden denenebileceği zaman (ms)
 const cooldownCode = {}; // motor -> son hata kodu
 const config = {
@@ -36,6 +44,39 @@ class TranslateError extends Error {
   }
 }
 
+function getGeminiModels(tier) {
+  const t = String(tier || 'fast').toLowerCase();
+  return GEMINI_TIERS[t] || GEMINI_MODELS_FAST;
+}
+
+function sanitizeCustomEndpoint(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return '';
+  let trimmed = urlStr.trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  let parsed;
+  try {
+    parsed = new URL(trimmed);
+  } catch (_) {
+    return '';
+  }
+  if (parsed.protocol !== 'https:') return '';
+  trimmed = trimmed.replace(/\/chat\/completions$/, '');
+  trimmed = trimmed.replace(/\/+$/, '');
+  return trimmed;
+}
+
+async function checkHostPermission(urlStr) {
+  if (typeof chrome === 'undefined' || !chrome.permissions || !chrome.permissions.contains) {
+    return true;
+  }
+  try {
+    const origin = new URL(urlStr).origin;
+    return await chrome.permissions.contains({ origins: [origin + '/*'] });
+  } catch (_) {
+    return false;
+  }
+}
+
 // Hata nesnesini güvenli, anahtar sızdırmayan durum koduna çevirir
 function classifyError(err) {
   if (!err) return 'unknown';
@@ -50,6 +91,7 @@ function classifyError(err) {
     return 'unknown';
   }
   const msg = String(err.message || '');
+  if (/permission/i.test(msg)) return 'permission';
   if (/uyuşmadı|mismatch/i.test(msg)) return 'mismatch';
   if (err instanceof TypeError || err.name === 'TypeError' || /network|fetch/i.test(msg)) return 'network';
   return 'unknown';
@@ -69,7 +111,7 @@ let statusQueue = Promise.resolve();
 function updateKeyStatus(mutator) {
   statusQueue = statusQueue.then(async () => {
     if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
-    const data = await chrome.storage.local.get({ geminiKey: '', groqKey: '', keyStatus: {} });
+    const data = await chrome.storage.local.get({ geminiKey: '', groqKey: '', customKey: '', keyStatus: {} });
     const ks = { ...(data.keyStatus || {}) };
     if (mutator(ks, data) !== false) await chrome.storage.local.set({ keyStatus: ks });
   }).catch(() => {});
@@ -78,7 +120,7 @@ function updateKeyStatus(mutator) {
 
 // Çeviri sırasında öğrenilen anahtar durumunu (yalnızca değiştiyse) yansıtır
 function reflectKeyState(provider, state, expectedKey) {
-  const field = provider === 'gemini' ? 'geminiKey' : 'groqKey';
+  const field = provider === 'gemini' ? 'geminiKey' : (provider === 'groq' ? 'groqKey' : 'customKey');
   return updateKeyStatus((ks, data) => {
     const curKey = String(data[field] || '').trim();
     if (!curKey || (expectedKey && curKey !== expectedKey)) return false;
@@ -88,14 +130,16 @@ function reflectKeyState(provider, state, expectedKey) {
 }
 
 // Anahtarı ilgili sağlayıcıya hafif GET isteğiyle doğrular ve keyStatus'a yazar
-async function validateKey(engine, key) {
+async function validateKey(engine, key, endpoint) {
   const provider = String(engine || '').toLowerCase();
-  if (provider !== 'gemini' && provider !== 'groq') return 'invalid';
-  const field = provider === 'gemini' ? 'geminiKey' : 'groqKey';
+  if (provider !== 'gemini' && provider !== 'groq' && provider !== 'custom') return 'invalid';
+  const field = provider === 'gemini' ? 'geminiKey' : (provider === 'groq' ? 'groqKey' : 'customKey');
   let rawKey = key;
-  if (rawKey === undefined && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    const data = await chrome.storage.local.get({ [field]: '' });
-    rawKey = data[field];
+  let customEp = endpoint;
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    const data = await chrome.storage.local.get({ [field]: '', customEndpoint: '' });
+    if (rawKey === undefined) rawKey = data[field];
+    if (customEp === undefined) customEp = data.customEndpoint || '';
   }
   const k = String(rawKey || '').trim();
   if (!k) {
@@ -105,12 +149,34 @@ async function validateKey(engine, key) {
     });
     return null;
   }
-  const url = provider === 'gemini'
-    ? 'https://generativelanguage.googleapis.com/v1beta/models'
-    : 'https://api.groq.com/openai/v1/models';
-  const headers = provider === 'gemini'
-    ? { 'x-goog-api-key': k }
-    : { Authorization: 'Bearer ' + k };
+  let url;
+  let headers;
+  if (provider === 'gemini') {
+    url = 'https://generativelanguage.googleapis.com/v1beta/models';
+    headers = { 'x-goog-api-key': k };
+  } else if (provider === 'groq') {
+    url = 'https://api.groq.com/openai/v1/models';
+    headers = { Authorization: 'Bearer ' + k };
+  } else if (provider === 'custom') {
+    const base = sanitizeCustomEndpoint(customEp);
+    if (!base) {
+      await updateKeyStatus((ks, cur) => {
+        if (key === undefined && String(cur[field] || '').trim() !== k) return false;
+        ks.custom = { state: 'invalid', at: Date.now() };
+      });
+      return 'invalid';
+    }
+    const hasPerm = await checkHostPermission(base);
+    if (!hasPerm) {
+      await updateKeyStatus((ks, cur) => {
+        if (key === undefined && String(cur[field] || '').trim() !== k) return false;
+        ks.custom = { state: 'permission', at: Date.now() };
+      });
+      return 'permission';
+    }
+    url = `${base}/models`;
+    headers = { Authorization: 'Bearer ' + k };
+  }
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), config.validateTimeoutMs);
   let state;
@@ -134,7 +200,7 @@ async function validateKey(engine, key) {
 function syncKeyStatus() {
   return updateKeyStatus((ks, data) => {
     let dirty = false;
-    for (const [prov, field] of [['gemini', 'geminiKey'], ['groq', 'groqKey']]) {
+    for (const [prov, field] of [['gemini', 'geminiKey'], ['groq', 'groqKey'], ['custom', 'customKey']]) {
       const hasKey = Boolean(String(data[field] || '').trim());
       if (hasKey && !ks[prov]) { ks[prov] = { state: 'unchecked', at: Date.now() }; dirty = true; }
       else if (!hasKey && ks[prov]) { delete ks[prov]; dirty = true; }
@@ -278,9 +344,10 @@ async function postJson(url, headers, body) {
   }
 }
 
-async function viaGemini(key, lines, sl, tl, ctx) {
+async function viaGemini(key, lines, sl, tl, ctx, tierOrModels) {
+  const models = Array.isArray(tierOrModels) ? tierOrModels : getGeminiModels(tierOrModels);
   let lastErr;
-  for (const model of GEMINI_MODELS) {
+  for (const model of models) {
     try {
       const data = await postJson(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -302,7 +369,14 @@ async function viaGemini(key, lines, sl, tl, ctx) {
       return out;
     } catch (e) {
       lastErr = e;
-      if (!(e instanceof HttpError) || e.status !== 404) throw e;
+      if (!(e instanceof HttpError)) throw e;
+      const st = e.status;
+      const isInvalidKey = st === 401 || ((st === 400 || st === 403) && INVALID_KEY_RE.test(String(e.body || '')));
+      if (isInvalidKey) throw e;
+      if (st === 404 || st === 403 || st === 429) {
+        continue;
+      }
+      throw e;
     }
   }
   throw lastErr;
@@ -322,6 +396,51 @@ async function viaGroq(key, lines, sl, tl, ctx) {
   const text = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
   const out = parseTranslations(text, lines.length);
   if (!out) throw new Error('Groq yanıtı satır sayısıyla uyuşmadı');
+  return out;
+}
+
+async function viaCustom(endpoint, key, model, lines, sl, tl, ctx) {
+  const base = sanitizeCustomEndpoint(endpoint);
+  if (!base) {
+    const err = new Error('Geçersiz veya eksik https customEndpoint');
+    err.code = 'invalid';
+    throw err;
+  }
+  const hasPerm = await checkHostPermission(base);
+  if (!hasPerm) {
+    const err = new Error('Özel sağlayıcı için izin verilmedi: ' + base);
+    err.code = 'permission';
+    throw err;
+  }
+
+  const k = String(key || '').trim();
+  const headers = k ? { Authorization: 'Bearer ' + k } : {};
+  const basePayload = {
+    model: model || '',
+    temperature: 0.2,
+    messages: [
+      { role: 'system', content: systemPrompt(sl, tl, ctx) },
+      { role: 'user', content: buildUserContent(lines, ctx) },
+    ],
+  };
+
+  let data;
+  try {
+    data = await postJson(`${base}/chat/completions`, headers, {
+      ...basePayload,
+      response_format: { type: 'json_object' },
+    });
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 400) {
+      data = await postJson(`${base}/chat/completions`, headers, basePayload);
+    } else {
+      throw e;
+    }
+  }
+
+  const text = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+  const out = parseTranslations(text, lines.length);
+  if (!out) throw new Error('Custom yanıtı satır sayısıyla uyuşmadı');
   return out;
 }
 
@@ -479,26 +598,42 @@ async function viaGtx(lines, sl, tl, depth = 0) {
 }
 
 async function translate(lines, sl, tl, ctx) {
-  const localData = await chrome.storage.local.get({ geminiKey: '', groqKey: '', engine: '' });
+  const localData = await chrome.storage.local.get({
+    geminiKey: '',
+    groqKey: '',
+    customKey: '',
+    customEndpoint: '',
+    customModel: '',
+    engine: '',
+    geminiModel: '',
+  });
   const geminiKey = String(localData.geminiKey || '').trim();
   const groqKey = String(localData.groqKey || '').trim();
+  const customKey = String(localData.customKey || '').trim();
+  const customEndpoint = sanitizeCustomEndpoint(localData.customEndpoint);
+  const customModel = String(localData.customModel || '').trim();
+
   let enginePref = localData.engine || '';
+  let geminiTier = localData.geminiModel || 'fast';
   try {
     if (chrome.storage && chrome.storage.sync && chrome.storage.sync.get) {
-      const s = await chrome.storage.sync.get({ engine: '' });
+      const s = await chrome.storage.sync.get({ engine: '', geminiModel: '' });
       if (s && s.engine) enginePref = s.engine;
+      if (s && s.geminiModel) geminiTier = s.geminiModel;
     }
   } catch (_) {}
   enginePref = String(enginePref || 'auto').toLowerCase();
+  geminiTier = String(geminiTier || 'fast').toLowerCase();
 
   const specs = {
-    gemini: ['Gemini', geminiKey, () => viaGemini(geminiKey, lines, sl, tl, ctx), 'gemini'],
+    gemini: ['Gemini', geminiKey, () => viaGemini(geminiKey, lines, sl, tl, ctx, geminiTier), 'gemini'],
     groq: ['Groq', groqKey, () => viaGroq(groqKey, lines, sl, tl, ctx), 'groq'],
+    custom: ['Custom', customKey, () => viaCustom(localData.customEndpoint, customKey, customModel, lines, sl, tl, ctx), 'custom'],
     google: ['Google', 'ok', () => viaGtx(lines, sl, tl), null],
   };
 
   const chain = [];
-  if (enginePref === 'gemini' || enginePref === 'groq' || enginePref === 'google') {
+  if (enginePref === 'gemini' || enginePref === 'groq' || enginePref === 'custom' || enginePref === 'google') {
     const [name, key, run, prov] = specs[enginePref];
     if (!key) throw new TranslateError([{ engine: name, code: 'nokey' }]);
     if (cooldown[name] && cooldown[name] > Date.now()) {
@@ -508,6 +643,7 @@ async function translate(lines, sl, tl, ctx) {
   } else {
     if (geminiKey) chain.push(['Gemini', specs.gemini[2], 'gemini', geminiKey]);
     if (groqKey) chain.push(['Groq', specs.groq[2], 'groq', groqKey]);
+    if (customKey && customEndpoint) chain.push(['Custom', specs.custom[2], 'custom', customKey]);
     chain.push(['Google', specs.google[2], null, '']);
   }
 
@@ -574,15 +710,35 @@ function handleMessage(msg, _sender, sendResponse) {
   }
   if (msg && msg.type === 'validateKey') {
     const provider = String(msg.engine || msg.provider || '').toLowerCase();
-    if (provider !== 'gemini' && provider !== 'groq') {
+    if (provider !== 'gemini' && provider !== 'groq' && provider !== 'custom') {
       sendResponse({ ok: false });
       return false;
     }
-    validateKey(provider, msg.key)
+    validateKey(provider, msg.key, msg.endpoint || msg.customEndpoint)
       .then((state) => sendResponse({ ok: true, state }))
       .catch(() => sendResponse({ ok: false, state: 'network' }));
     return true;
   }
+}
+
+async function toggleTranslation(storageArea) {
+  const store = storageArea || (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync ? chrome.storage.sync : null);
+  if (!store || typeof store.get !== 'function' || typeof store.set !== 'function') return false;
+  const data = await store.get({ enabled: true });
+  const current = data && data.enabled !== undefined ? Boolean(data.enabled) : true;
+  const next = !current;
+  await store.set({ enabled: next });
+  return next;
+}
+
+function handleCommand(command, storageArea) {
+  if (command === 'toggle-translation') {
+    return toggleTranslation(storageArea);
+  }
+}
+
+if (typeof chrome !== 'undefined' && chrome.commands && chrome.commands.onCommand) {
+  chrome.commands.onCommand.addListener(handleCommand);
 }
 
 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
@@ -590,11 +746,13 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
     if (area && area !== 'local') return;
     if (changes.geminiKey) { delete cooldown.Gemini; delete cooldownCode.Gemini; }
     if (changes.groqKey) { delete cooldown.Groq; delete cooldownCode.Groq; }
-    if (changes.geminiKey || changes.groqKey) {
+    if (changes.customKey || changes.customEndpoint) { delete cooldown.Custom; delete cooldownCode.Custom; }
+    if (changes.geminiKey || changes.groqKey || changes.customKey || changes.customEndpoint) {
       updateKeyStatus((ks, data) => {
-        for (const [prov, field] of [['gemini', 'geminiKey'], ['groq', 'groqKey']]) {
-          if (!changes[field]) continue;
-          const raw = changes[field].newValue !== undefined ? changes[field].newValue : data[field];
+        for (const [prov, field] of [['gemini', 'geminiKey'], ['groq', 'groqKey'], ['custom', 'customKey']]) {
+          if (prov === 'custom' && !changes.customKey && !changes.customEndpoint) continue;
+          if (prov !== 'custom' && !changes[field]) continue;
+          const raw = changes[field] && changes[field].newValue !== undefined ? changes[field].newValue : data[field];
           if (String(raw || '').trim()) ks[prov] = { state: 'unchecked', at: Date.now() };
           else delete ks[prov];
         }
@@ -614,5 +772,8 @@ if (typeof module !== 'undefined') {
     classifyError, classifyValidation, validateKey, handleMessage,
     systemPrompt, sanitizeMetaField, formatVideoContext, buildUserContent, hasContextData,
     gtx, viaGtx, gtxQueue, GtxQueue,
+    GEMINI_MODELS, GEMINI_MODELS_FAST, GEMINI_MODELS_BALANCED, GEMINI_MODELS_QUALITY, GEMINI_TIERS, getGeminiModels,
+    viaGemini, viaGroq, viaCustom, sanitizeCustomEndpoint, checkHostPermission,
+    toggleTranslation, handleCommand,
   };
 }

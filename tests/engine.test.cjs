@@ -2,6 +2,8 @@ const assert = require('assert');
 let store = {};
 let syncStore = {};
 let storageWrites = [];
+let permissionsAllowed = [];
+let commandListeners = [];
 globalThis.chrome = {
   storage: {
     local: {
@@ -11,6 +13,14 @@ globalThis.chrome = {
     sync: {
       get: async (d) => ({ ...d, ...syncStore }),
       set: async (o) => Object.assign(syncStore, o),
+    },
+  },
+  permissions: {
+    contains: async ({ origins }) => (origins || []).every((o) => permissionsAllowed.includes(o)),
+  },
+  commands: {
+    onCommand: {
+      addListener: (fn) => commandListeners.push(fn),
     },
   },
   runtime: {},
@@ -29,12 +39,17 @@ const {
   translate, cooldown, cooldownCode, config, TranslateError, validateKey, handleMessage,
   systemPrompt, sanitizeMetaField, formatVideoContext, buildUserContent, hasContextData,
   gtx, viaGtx, gtxQueue, GtxQueue,
+  GEMINI_MODELS, GEMINI_MODELS_FAST, GEMINI_MODELS_BALANCED, GEMINI_MODELS_QUALITY, GEMINI_TIERS, getGeminiModels,
+  viaGemini, viaGroq, viaCustom, sanitizeCustomEndpoint, checkHostPermission,
+  toggleTranslation, handleCommand,
 } = require(require('path').join(__dirname, '../extension/background.js'));
 const geminiOK = (arr) => () => json(200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ translations: arr }) }] } }] });
 const groqOK = (arr) => () => json(200, { choices: [{ message: { content: JSON.stringify({ translations: arr }) } }] });
+const customOK = (arr) => () => json(200, { choices: [{ message: { content: JSON.stringify({ translations: arr }) } }] });
 const gtxOK = () => json(200, [[['bir\n', 'one\n'], ['iki', 'two']]]);
 const reset = () => {
   calls = []; reqLog = []; storageWrites = []; plan = {}; syncStore = {};
+  permissionsAllowed = [];
   for (const k in cooldown) delete cooldown[k];
   for (const k in cooldownCode) delete cooldownCode[k];
   config.gtxMinIntervalMs = 0;
@@ -111,7 +126,7 @@ const reset = () => {
       return true;
     },
   );
-  assert.deepEqual(calls, ['generativelanguage.googleapis.com'], 'Groq veya Google çağrılmamalı');
+  assert.deepEqual(calls, ['generativelanguage.googleapis.com', 'generativelanguage.googleapis.com'], 'Groq veya Google çağrılmamalı');
 
   // sync.engine='gemini' ve 401 invalid durumunda da yedek motora düşmez
   reset();
@@ -136,7 +151,7 @@ const reset = () => {
   plan['translate.googleapis.com'] = gtxOK;
   r = await translate(['one', 'two'], 'en', 'tr');
   assert.equal(r.engine, 'Google');
-  assert.deepEqual(calls, ['generativelanguage.googleapis.com', 'api.groq.com', 'translate.googleapis.com']);
+  assert.deepEqual(calls, ['generativelanguage.googleapis.com', 'generativelanguage.googleapis.com', 'api.groq.com', 'translate.googleapis.com']);
   assert.deepEqual(r.issues, [
     { engine: 'Gemini', code: 'quota' },
     { engine: 'Groq', code: 'invalid' },
@@ -616,5 +631,430 @@ const reset = () => {
   );
   assert.equal(calls.length, 0, 'auto modunda cooldown sürerken hiçbir ağ isteği atılmamalı');
 
-  console.log('24/24 motor testi geçti');
+  // 25) (1) Gemini model kademeleri (fast/balanced/quality listeleri) ve 404'te sıradaki modele düşme, 401'de düşmeme
+  {
+    // Model listeleri
+    assert.deepEqual(GEMINI_TIERS.fast, ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite']);
+    assert.deepEqual(GEMINI_TIERS.balanced, ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite']);
+    assert.deepEqual(GEMINI_TIERS.quality, ['gemini-pro-latest', 'gemini-2.5-pro', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite']);
+    assert.deepEqual(getGeminiModels('fast'), GEMINI_TIERS.fast);
+    assert.deepEqual(getGeminiModels('balanced'), GEMINI_TIERS.balanced);
+    assert.deepEqual(getGeminiModels('quality'), GEMINI_TIERS.quality);
+    assert.deepEqual(getGeminiModels('unknown'), GEMINI_TIERS.fast);
+    assert.deepEqual(getGeminiModels(), GEMINI_TIERS.fast);
+    assert.deepEqual(GEMINI_MODELS, GEMINI_MODELS_FAST);
+
+    // 404'te sıradaki modele düşme (viaGemini)
+    reset();
+    const hitUrls = [];
+    plan['generativelanguage.googleapis.com'] = (url) => {
+      hitUrls.push(url);
+      if (url.includes('gemini-flash-latest')) {
+        return json(404, { error: 'Model not found' });
+      }
+      return geminiOK(['bir', 'iki'])();
+    };
+    const geminiRes = await viaGemini('gem-key', ['one', 'two'], 'en', 'tr', null, 'balanced');
+    assert.deepEqual(geminiRes, ['bir', 'iki']);
+    assert.equal(hitUrls.length, 2, 'İlk model 404 verince ikinci model denenmeli');
+    assert.ok(hitUrls[0].includes('gemini-flash-latest'), 'İlk model gemini-flash-latest olmalı');
+    assert.ok(hitUrls[1].includes('gemini-2.5-flash'), 'İkinci model gemini-2.5-flash olmalı');
+
+    // 404'te sıradaki modele düşme (translate ile sync.geminiModel üzerinden)
+    reset();
+    store = { geminiKey: 'gem-key', engine: 'gemini' };
+    syncStore = { geminiModel: 'quality' };
+    const qualityHits = [];
+    plan['generativelanguage.googleapis.com'] = (url) => {
+      qualityHits.push(url);
+      if (url.includes('gemini-pro-latest') || url.includes('gemini-2.5-pro')) {
+        return json(404, { error: 'not found' });
+      }
+      return geminiOK(['sonuç'])();
+    };
+    const tRes = await translate(['input'], 'en', 'tr');
+    assert.equal(tRes.engine, 'Gemini');
+    assert.deepEqual(tRes.res, ['sonuç']);
+    assert.equal(qualityHits.length, 3);
+    assert.ok(qualityHits[0].includes('gemini-pro-latest'));
+    assert.ok(qualityHits[1].includes('gemini-2.5-pro'));
+    assert.ok(qualityHits[2].includes('gemini-flash-latest'));
+
+    // 401'de sıradaki modele DÜŞMEME (hemen hata fırlatır, tek istekte durur)
+    reset();
+    let gemini401Count = 0;
+    plan['generativelanguage.googleapis.com'] = () => {
+      gemini401Count++;
+      return json(401, { error: 'API_KEY_INVALID' });
+    };
+    await assert.rejects(
+      () => viaGemini('bad-key', ['one', 'two'], 'en', 'tr', null, 'quality'),
+      (err) => {
+        assert.equal(err.status, 401);
+        return true;
+      },
+    );
+    assert.equal(gemini401Count, 1, '401 yetkisiz hatasında sıradaki modele düşülmemeli, tek istekte durmalı');
+
+    reset();
+    store = { geminiKey: 'bad-key', engine: 'gemini' };
+    syncStore = { geminiModel: 'balanced' };
+    let translate401Calls = 0;
+    plan['generativelanguage.googleapis.com'] = () => {
+      translate401Calls++;
+      return json(401, { error: 'API key not valid' });
+    };
+    await assert.rejects(
+      () => translate(['one'], 'en', 'tr'),
+      (err) => {
+        assert.ok(err instanceof TranslateError);
+        assert.equal(err.code, 'invalid');
+        return true;
+      },
+    );
+    assert.equal(translate401Calls, 1, 'translate çağrısında 401 sonrası diğer modellere düşülmemeli');
+  }
+
+  // 26) (2) sanitizeCustomEndpoint: http reddedilir, sondaki / silinir, geçersiz → boş
+  {
+    // http reddedilir
+    assert.equal(sanitizeCustomEndpoint('http://api.example.com'), '');
+    assert.equal(sanitizeCustomEndpoint('http://api.example.com/v1'), '');
+    assert.equal(sanitizeCustomEndpoint('http://localhost:8000/v1'), '');
+    assert.equal(sanitizeCustomEndpoint('http://127.0.0.1:11434/v1'), '');
+
+    // sondaki / silinir
+    assert.equal(sanitizeCustomEndpoint('https://api.openai.com/v1/'), 'https://api.openai.com/v1');
+    assert.equal(sanitizeCustomEndpoint('https://api.openai.com/v1///'), 'https://api.openai.com/v1');
+    assert.equal(sanitizeCustomEndpoint('https://api.openai.com/'), 'https://api.openai.com');
+    assert.equal(sanitizeCustomEndpoint('  https://api.openai.com/v1/  '), 'https://api.openai.com/v1');
+    assert.equal(sanitizeCustomEndpoint('https://api.openai.com/v1/chat/completions'), 'https://api.openai.com/v1');
+    assert.equal(sanitizeCustomEndpoint('https://api.openai.com/v1/chat/completions/'), 'https://api.openai.com/v1');
+
+    // geçersiz → boş
+    assert.equal(sanitizeCustomEndpoint(''), '');
+    assert.equal(sanitizeCustomEndpoint('   '), '');
+    assert.equal(sanitizeCustomEndpoint(null), '');
+    assert.equal(sanitizeCustomEndpoint(undefined), '');
+    assert.equal(sanitizeCustomEndpoint(123), '');
+    assert.equal(sanitizeCustomEndpoint({}), '');
+    assert.equal(sanitizeCustomEndpoint('not-a-valid-url'), '');
+    assert.equal(sanitizeCustomEndpoint('ftp://example.com'), '');
+    assert.equal(sanitizeCustomEndpoint('javascript:alert(1)'), '');
+  }
+
+  // 27) (3) custom: POST ${base}/chat/completions gerçekten çağrılır, Authorization Bearer, anahtar URL'de ve hata mesajında YOK; 400'de response_format'sız bir kez yeniden dener; izin yoksa 'permission' kodu ve istek atılmaz; auto sırası Gemini→Groq→Custom→Google
+  {
+    // POST ${base}/chat/completions gerçekten çağrılır, Authorization Bearer, anahtar URL'de ve hata mesajında YOK
+    reset();
+    const SECRET_CUSTOM = 'sk-custom-super-secret-key-xyz-789';
+    const CUSTOM_HOST = 'custom-ai.example.com';
+    const CUSTOM_ORIGIN = `https://${CUSTOM_HOST}/*`;
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    store = {
+      customKey: SECRET_CUSTOM,
+      customEndpoint: `https://${CUSTOM_HOST}/v1/`,
+      customModel: 'custom-model-x',
+      engine: 'custom',
+    };
+    let receivedMethod = '';
+    let receivedAuth = '';
+    let receivedUrl = '';
+    let receivedBody = null;
+    plan[CUSTOM_HOST] = (url, opts) => {
+      receivedMethod = opts.method;
+      receivedAuth = opts.headers && opts.headers['Authorization'];
+      receivedUrl = url;
+      receivedBody = JSON.parse(opts.body);
+      return customOK(['bir', 'iki'])();
+    };
+
+    let rCustom = await translate(['one', 'two'], 'en', 'tr');
+    assert.equal(rCustom.engine, 'Custom');
+    assert.deepEqual(rCustom.res, ['bir', 'iki']);
+    assert.equal(receivedMethod, 'POST');
+    assert.equal(receivedUrl, `https://${CUSTOM_HOST}/v1/chat/completions`);
+    assert.equal(receivedAuth, `Bearer ${SECRET_CUSTOM}`);
+    assert.equal(receivedBody.model, 'custom-model-x');
+    assert.deepEqual(receivedBody.response_format, { type: 'json_object' });
+    assert.ok(!receivedUrl.includes(SECRET_CUSTOM), 'Özel sağlayıcı anahtarı URL içinde geçmemeli');
+
+    // Hata mesajında anahtar YOK
+    reset();
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    store = {
+      customKey: SECRET_CUSTOM,
+      customEndpoint: `https://${CUSTOM_HOST}/v1`,
+      engine: 'custom',
+    };
+    plan[CUSTOM_HOST] = () => json(500, `Internal Server Error with sensitive key: ${SECRET_CUSTOM}`);
+    await assert.rejects(
+      () => translate(['one'], 'en', 'tr'),
+      (err) => {
+        assert.ok(!err.message.includes(SECRET_CUSTOM), 'err.message içinde anahtar bulunmamalı');
+        const serialized = JSON.stringify(err);
+        assert.ok(!serialized.includes(SECRET_CUSTOM), 'Hata nesnesi içinde anahtar bulunmamalı');
+        return true;
+      },
+    );
+
+    // 400'de response_format'sız bir kez yeniden dener
+    reset();
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    const customAttempts = [];
+    plan[CUSTOM_HOST] = (url, opts) => {
+      const b = JSON.parse(opts.body);
+      customAttempts.push(b);
+      if (b.response_format) {
+        return json(400, { error: 'response_format is not supported by this model' });
+      }
+      return customOK(['tekrar başarılı'])();
+    };
+    const retryRes = await viaCustom(`https://${CUSTOM_HOST}/v1`, SECRET_CUSTOM, 'custom-model-x', ['test'], 'en', 'tr');
+    assert.deepEqual(retryRes, ['tekrar başarılı']);
+    assert.equal(customAttempts.length, 2, '400 durumunda tam 1 kez yeniden denenmeli');
+    assert.deepEqual(customAttempts[0].response_format, { type: 'json_object' });
+    assert.equal(customAttempts[1].response_format, undefined, 'İkinci denemede response_format kaldırılmış olmalı');
+
+    // İkinci 400'de tekrar denemez, hata fırlatır
+    reset();
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    let fail400Count = 0;
+    plan[CUSTOM_HOST] = () => {
+      fail400Count++;
+      return json(400, { error: 'bad request permanent' });
+    };
+    await assert.rejects(
+      () => viaCustom(`https://${CUSTOM_HOST}/v1`, SECRET_CUSTOM, 'custom-model-x', ['test'], 'en', 'tr'),
+      (err) => err.status === 400,
+    );
+    assert.equal(fail400Count, 2, 'İkinci 400 sonrasında sonsuz deneme yapılmamalı');
+
+    // İzin yoksa 'permission' kodu ve istek atılmaz
+    reset();
+    permissionsAllowed = []; // İzin YOK
+    store = {
+      customKey: SECRET_CUSTOM,
+      customEndpoint: `https://${CUSTOM_HOST}/v1`,
+      engine: 'custom',
+    };
+    await assert.rejects(
+      () => translate(['one'], 'en', 'tr'),
+      (err) => {
+        assert.ok(err instanceof TranslateError);
+        assert.equal(err.code, 'permission');
+        assert.deepEqual(err.issues, [{ engine: 'Custom', code: 'permission' }]);
+        return true;
+      },
+    );
+    assert.equal(calls.length, 0, 'İzin yokken hiçbir HTTP isteği atılmamalı');
+
+    await assert.rejects(
+      () => viaCustom(`https://${CUSTOM_HOST}/v1`, SECRET_CUSTOM, 'custom-model-x', ['one'], 'en', 'tr'),
+      (err) => {
+        assert.equal(err.code, 'permission');
+        return true;
+      },
+    );
+    assert.equal(calls.length, 0, 'viaCustom doğrudan çağrıldığında da izin yoksa istek atılmaz');
+
+    // Auto sırası: Gemini → Groq → Custom → Google
+    reset();
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    store = {
+      geminiKey: 'gem-key',
+      groqKey: 'groq-key',
+      customKey: SECRET_CUSTOM,
+      customEndpoint: `https://${CUSTOM_HOST}/v1`,
+      engine: 'auto',
+    };
+    plan['generativelanguage.googleapis.com'] = () => json(429, { error: 'gemini quota' });
+    plan['api.groq.com'] = () => json(401, { error: 'invalid_api_key' });
+    plan[CUSTOM_HOST] = customOK(['özel çeviri 1', 'özel çeviri 2']);
+    plan['translate.googleapis.com'] = gtxOK;
+
+    const autoRes = await translate(['one', 'two'], 'en', 'tr');
+    assert.equal(autoRes.engine, 'Custom');
+    assert.deepEqual(autoRes.res, ['özel çeviri 1', 'özel çeviri 2']);
+    assert.deepEqual(calls, [
+      'generativelanguage.googleapis.com',
+      'generativelanguage.googleapis.com',
+      'api.groq.com',
+      CUSTOM_HOST,
+    ]);
+    assert.deepEqual(autoRes.issues, [
+      { engine: 'Gemini', code: 'quota' },
+      { engine: 'Groq', code: 'invalid' },
+    ]);
+
+    // Custom da kotaya takılırsa Google'a düşer
+    reset();
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    store = {
+      geminiKey: 'gem-key',
+      groqKey: 'groq-key',
+      customKey: SECRET_CUSTOM,
+      customEndpoint: `https://${CUSTOM_HOST}/v1`,
+      engine: 'auto',
+    };
+    plan['generativelanguage.googleapis.com'] = () => json(429, { error: 'gemini quota' });
+    plan['api.groq.com'] = () => json(401, { error: 'invalid_api_key' });
+    plan[CUSTOM_HOST] = () => json(429, { error: 'custom quota exceeded' });
+    plan['translate.googleapis.com'] = gtxOK;
+
+    const autoFallbackGoogle = await translate(['one', 'two'], 'en', 'tr');
+    assert.equal(autoFallbackGoogle.engine, 'Google');
+    assert.deepEqual(autoFallbackGoogle.res, ['bir', 'iki']);
+    assert.deepEqual(calls, [
+      'generativelanguage.googleapis.com',
+      'generativelanguage.googleapis.com',
+      'api.groq.com',
+      CUSTOM_HOST,
+      'translate.googleapis.com',
+    ]);
+    assert.deepEqual(autoFallbackGoogle.issues, [
+      { engine: 'Gemini', code: 'quota' },
+      { engine: 'Groq', code: 'invalid' },
+      { engine: 'Custom', code: 'quota' },
+    ]);
+
+    // Custom host izni yoksa auto modunda Google'a düşer ve izin hatası kaydedilir
+    reset();
+    permissionsAllowed = []; // Custom izni yok
+    store = {
+      geminiKey: 'gem-key',
+      groqKey: 'groq-key',
+      customKey: SECRET_CUSTOM,
+      customEndpoint: `https://${CUSTOM_HOST}/v1`,
+      engine: 'auto',
+    };
+    plan['generativelanguage.googleapis.com'] = () => json(429, { error: 'gemini quota' });
+    plan['api.groq.com'] = () => json(401, { error: 'invalid_api_key' });
+    plan['translate.googleapis.com'] = gtxOK;
+
+    const noPermAuto = await translate(['one', 'two'], 'en', 'tr');
+    assert.equal(noPermAuto.engine, 'Google');
+    assert.deepEqual(noPermAuto.issues, [
+      { engine: 'Gemini', code: 'quota' },
+      { engine: 'Groq', code: 'invalid' },
+      { engine: 'Custom', code: 'permission' },
+    ]);
+    assert.ok(!calls.includes(CUSTOM_HOST), 'İzin yokken custom sunucusuna istek gitmemeli');
+  }
+
+  // 28) (4) validateKey('custom') GET /models, keyStatus.custom güncellenir
+  {
+    reset();
+    const CUSTOM_HOST = 'custom-validate.example.com';
+    const CUSTOM_ORIGIN = `https://${CUSTOM_HOST}/*`;
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    store = { customKey: 'val-key-1', customEndpoint: `https://${CUSTOM_HOST}/v1` };
+
+    // valid: GET ${base}/models ve Authorization: Bearer
+    plan[CUSTOM_HOST] = (url, opts) => {
+      assert.equal(opts.method, 'GET');
+      assert.equal(url, `https://${CUSTOM_HOST}/v1/models`);
+      assert.equal(opts.headers['Authorization'], 'Bearer val-key-1');
+      assert.ok(!url.includes('val-key-1'), 'validateKey URL içinde anahtar geçmemeli');
+      return json(200, { data: [{ id: 'model-a' }] });
+    };
+    assert.equal(await validateKey('custom', 'val-key-1', `https://${CUSTOM_HOST}/v1`), 'valid');
+    assert.equal(store.keyStatus.custom.state, 'valid');
+    assert.ok(typeof store.keyStatus.custom.at === 'number');
+
+    // invalid (401)
+    plan[CUSTOM_HOST] = () => json(401, { error: 'invalid_api_key' });
+    assert.equal(await validateKey('custom', 'val-key-1', `https://${CUSTOM_HOST}/v1`), 'invalid');
+    assert.equal(store.keyStatus.custom.state, 'invalid');
+
+    // quota (429)
+    plan[CUSTOM_HOST] = () => json(429, { error: 'rate limit' });
+    assert.equal(await validateKey('custom', 'val-key-1', `https://${CUSTOM_HOST}/v1`), 'quota');
+    assert.equal(store.keyStatus.custom.state, 'quota');
+
+    // network
+    plan[CUSTOM_HOST] = () => { throw new TypeError('Network connection refused'); };
+    assert.equal(await validateKey('custom', 'val-key-1', `https://${CUSTOM_HOST}/v1`), 'network');
+    assert.equal(store.keyStatus.custom.state, 'network');
+
+    // permission (izin yoksa istek atmadan permission döner ve keyStatus'a yazar)
+    permissionsAllowed = [];
+    calls = [];
+    assert.equal(await validateKey('custom', 'val-key-1', `https://${CUSTOM_HOST}/v1`), 'permission');
+    assert.equal(store.keyStatus.custom.state, 'permission');
+    assert.equal(calls.length, 0, 'İzin yokken validateKey HTTP isteği atmamalı');
+
+    // geçersiz endpoint
+    assert.equal(await validateKey('custom', 'val-key-1', 'http://insecure.endpoint.com'), 'invalid');
+    assert.equal(store.keyStatus.custom.state, 'invalid');
+
+    // Boş anahtar verilirse keyStatus.custom silinir
+    store.keyStatus = { custom: { state: 'valid', at: Date.now() } };
+    assert.equal(await validateKey('custom', ''), null);
+    assert.equal(store.keyStatus.custom, undefined);
+
+    // handleMessage üzerinden validateKey('custom')
+    permissionsAllowed = [CUSTOM_ORIGIN];
+    store = { customKey: 'msg-key', customEndpoint: `https://${CUSTOM_HOST}/v1` };
+    plan[CUSTOM_HOST] = () => json(200, { data: [] });
+    const hmVal = await new Promise((resolve) => {
+      handleMessage({ type: 'validateKey', engine: 'custom', key: 'msg-key', endpoint: `https://${CUSTOM_HOST}/v1` }, {}, resolve);
+    });
+    assert.deepEqual(hmVal, { ok: true, state: 'valid' });
+    assert.equal(store.keyStatus.custom.state, 'valid');
+  }
+
+  // 29) (5) handleCommand('toggle-translation') enabled'ı tersine çevirir (varsayılan true→false), başka komutu yok sayar
+  {
+    reset();
+    syncStore = {}; // Başlangıçta boş; varsayılan enabled: true
+
+    // İlk çağrı: varsayılan true -> false
+    const state1 = await handleCommand('toggle-translation');
+    assert.equal(state1, false);
+    assert.equal(syncStore.enabled, false);
+
+    // İkinci çağrı: false -> true
+    const state2 = await handleCommand('toggle-translation');
+    assert.equal(state2, true);
+    assert.equal(syncStore.enabled, true);
+
+    // Üçüncü çağrı: true -> false
+    const state3 = await handleCommand('toggle-translation');
+    assert.equal(state3, false);
+    assert.equal(syncStore.enabled, false);
+
+    // Başka komutu yok sayar (undefined döner ve syncStore.enabled değişmez)
+    const ignored1 = await handleCommand('other-command');
+    assert.equal(ignored1, undefined);
+    assert.equal(syncStore.enabled, false);
+
+    const ignored2 = await handleCommand('toggle-other');
+    assert.equal(ignored2, undefined);
+    assert.equal(syncStore.enabled, false);
+
+    // toggleTranslation doğrudan çağrısı ve özel storageArea desteği
+    const memStore = { enabled: false };
+    const customArea = {
+      get: async (d) => ({ ...d, ...memStore }),
+      set: async (o) => Object.assign(memStore, o),
+    };
+    const tRes1 = await toggleTranslation(customArea);
+    assert.equal(tRes1, true);
+    assert.equal(memStore.enabled, true);
+    const tRes2 = await toggleTranslation(customArea);
+    assert.equal(tRes2, false);
+    assert.equal(memStore.enabled, false);
+
+    // chrome.commands listener kaydı testi
+    assert.ok(commandListeners.length > 0, 'chrome.commands.onCommand listener kaydedilmiş olmalı');
+    const onCommandFn = commandListeners[0];
+    syncStore.enabled = true;
+    await onCommandFn('toggle-translation');
+    assert.equal(syncStore.enabled, false);
+    await onCommandFn('unrelated-command');
+    assert.equal(syncStore.enabled, false, 'İlgisiz komut syncStore.enabled değerini değiştirmemeli');
+  }
+
+  console.log('29/29 motor testi geçti');
 })().catch((e) => { console.error('BAŞARISIZ:', e.message); process.exit(1); });

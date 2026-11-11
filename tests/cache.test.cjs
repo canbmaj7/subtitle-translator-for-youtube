@@ -29,7 +29,7 @@ function fakeStore() {
 
 (async () => {
   let passed = 0;
-  const total = 11;
+  const total = 12;
   const L = ['Hello world', 'How are you'];
 
   // 1) Yaz-oku gidiş dönüş ve VERSION 2
@@ -202,6 +202,24 @@ function fakeStore() {
     assert.equal(rFastCached.cached, true);
     assert.deepEqual(rFastCached.res, ['gemini:fast:Hello world', 'gemini:fast:How are you']);
     assert.equal(sendCalls, 2);
+    passed++;
+  }
+
+  // 12) wantsAI keyStatus.custom'ı sayar
+  {
+    assert.equal(wantsAI('auto', { custom: { state: 'valid' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'unchecked' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'quota' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'permission' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'invalid' } }), false);
+    assert.equal(wantsAI('custom', { custom: { state: 'valid' } }), true);
+    assert.equal(wantsAI('custom', { custom: { state: 'unchecked' } }), true);
+    assert.equal(wantsAI('custom', { custom: { state: 'quota' } }), true);
+    assert.equal(wantsAI('custom', { custom: { state: 'permission' } }), true);
+    assert.equal(wantsAI('custom', { custom: { state: 'invalid' } }), false);
+    assert.equal(wantsAI('google', { custom: { state: 'valid' } }), false);
+    assert.equal(wantsAI('auto', { custom: { state: 'valid' }, gemini: { state: 'invalid' }, groq: { state: 'invalid' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'invalid' }, gemini: { state: 'invalid' }, groq: { state: 'invalid' } }), false);
     passed++;
   }
 

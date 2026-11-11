@@ -130,7 +130,7 @@ const overlayText = (page) => page.evaluate(() => (document.getElementById('ytr-
 
       // 4) Önbellek kaydı yazıldı
       const keys = Object.keys(await sw.evaluate(() => chrome.storage.local.get(null)));
-      assert.ok(keys.some((k) => k.startsWith('tc1:')), 'önbellek kaydı olmalı');
+      assert.ok(keys.some((k) => k.startsWith('tc2:')), 'önbellek kaydı olmalı');
       passed++;
 
       // 5) Sayfa yenilenince yeniden çeviri istemi YOK, ipucu tekrar çıkmaz
