@@ -1,0 +1,478 @@
+{
+  "extName": {
+    "message": "Traducteur de sous-titres pour YouTube",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Traduit les sous-titres YouTube dans votre langue et les incruste parfaitement sur la vidéo.",
+    "description": "Extension description"
+  },
+  "btnTitle": {
+    "message": "Traduction $LANG$ — Clic : activer/désactiver · Clic droit : paramètres",
+    "description": "Tooltip for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnAriaLabel": {
+    "message": "Traduction $LANG$ — Clic : activer/désactiver · Clic droit : paramètres",
+    "description": "Aria label for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "panelTitle": {
+    "message": "Traducteur de sous-titres",
+    "description": "Title of settings panel"
+  },
+  "rowTranslation": {
+    "message": "Traduction",
+    "description": "Label for translation toggle"
+  },
+  "rowTargetLang": {
+    "message": "Langue cible",
+    "description": "Label for target language dropdown"
+  },
+  "rowShowOriginal": {
+    "message": "Afficher le texte original",
+    "description": "Label for original text toggle"
+  },
+  "rowFontSize": {
+    "message": "Taille de police",
+    "description": "Label for font size slider"
+  },
+  "statusEngine": {
+    "message": "Moteur : $ENGINE$",
+    "description": "Current translation engine",
+    "placeholders": {
+      "engine": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusEngineNone": {
+    "message": "Moteur : —",
+    "description": "No engine active yet"
+  },
+  "statusError": {
+    "message": "Erreur de traduction : $ERROR$",
+    "description": "Translation error message",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "googleKeyHint": {
+    "message": "Ajoutez une clé API depuis le popup de l'extension pour des traductions de meilleure qualité.",
+    "description": "Hint to add Gemini or Groq key"
+  },
+  "chipIdle": {
+    "message": "En attente",
+    "description": "Idle status for engine chip"
+  },
+  "chipReady": {
+    "message": "Prêt",
+    "description": "Status chip text when idle or ready"
+  },
+  "chipError": {
+    "message": "Erreur",
+    "description": "Status chip text when last translation failed"
+  },
+  "cardGeneral": {
+    "message": "Général",
+    "description": "General settings card heading"
+  },
+  "optgroupPopular": {
+    "message": "Langues populaires",
+    "description": "Optgroup label for popular target languages"
+  },
+  "optgroupAll": {
+    "message": "Toutes les langues",
+    "description": "Optgroup label for all target languages"
+  },
+  "cardAiTitle": {
+    "message": "Meilleure traduction (clé API gratuite)",
+    "description": "AI API key card heading"
+  },
+  "cardAiDesc": {
+    "message": "Sans clé API, Google Traduction est utilisé. L'ajout d'une clé IA permet des traductions contextuelles bien plus naturelles.",
+    "description": "Explanation of AI translation benefits"
+  },
+  "labelGemini": {
+    "message": "Clé API Gemini",
+    "description": "Label for Gemini key field"
+  },
+  "badgeRecommended": {
+    "message": "Recommandé",
+    "description": "Badge for Gemini key"
+  },
+  "labelGroq": {
+    "message": "Clé API Groq",
+    "description": "Label for Groq key field"
+  },
+  "badgeOptional": {
+    "message": "Secours, facultatif",
+    "description": "Badge for Groq key"
+  },
+  "placeholderGeminiKey": {
+    "message": "AIza...",
+    "description": "Placeholder for Gemini API key"
+  },
+  "placeholderGroqKey": {
+    "message": "gsk_...",
+    "description": "Placeholder for Groq API key"
+  },
+  "getKeyLink": {
+    "message": "Obtenir une clé",
+    "description": "Link text to get an API key"
+  },
+  "btnShowKey": {
+    "message": "Afficher la clé",
+    "description": "Tooltip and aria-label to show API key"
+  },
+  "btnHideKey": {
+    "message": "Masquer la clé",
+    "description": "Tooltip and aria-label to hide API key"
+  },
+  "btnTestKey": {
+    "message": "Tester",
+    "description": "Button to validate API key"
+  },
+  "keyStatusTesting": {
+    "message": "Test en cours…",
+    "description": "Key status badge while validating"
+  },
+  "keyBadgeInvalid": {
+    "message": "Clé non valide",
+    "description": "Detailed key status badge in popup when invalid"
+  },
+  "keyBadgeNetwork": {
+    "message": "Erreur réseau, réessayez plus tard",
+    "description": "Detailed key status badge in popup on network error"
+  },
+  "engineNoKey": {
+    "message": "sans clé",
+    "description": "Note shown next to engine without API key in popup"
+  },
+  "privacyNote": {
+    "message": "Les clés sont stockées localement dans ce navigateur et ne sont jamais synchronisées. Avec une clé Gemini ou Groq, le texte des sous-titres ainsi que le titre de la vidéo, le nom de la chaîne, un court extrait de description et les phrases environnantes sont envoyés au fournisseur en tant que contexte. Avec l'offre gratuite de Gemini, le contenu envoyé peut être utilisé par Google pour améliorer ses produits.",
+    "description": "Privacy note for API keys"
+  },
+  "infoDefault": {
+    "message": "La traduction démarre automatiquement sur les vidéos avec sous-titres.",
+    "description": "Default hint in footer info bar"
+  },
+  "btnRetry": {
+    "message": "Réessayer",
+    "description": "btnRetry"
+  },
+  "descWaitForTranslation": {
+    "message": "Mettre en pause brièvement si la traduction n'est pas encore prête",
+    "description": "descWaitForTranslation"
+  },
+  "rowWaitForTranslation": {
+    "message": "Attendre la traduction",
+    "description": "rowWaitForTranslation"
+  },
+  "waitingText": {
+    "message": "Traduction…",
+    "description": "waitingText"
+  },
+  "progressReady": {
+    "message": "Traduction prête",
+    "description": "progressReady"
+  },
+  "progressTranslating": {
+    "message": "Traduction… $1/$2",
+    "description": "progressTranslating"
+  },
+  "progressFailed": {
+    "message": "Impossible de traduire $1 sections",
+    "description": "progressFailed"
+  },
+  "noteYtAuto": {
+    "message": "La traduction intégrée de YouTube dans cette langue est active, l'extension reste donc en veille. Choisissez les sous-titres d'origine dans les paramètres de sous-titres de YouTube.",
+    "description": "Panel note"
+  },
+  "toastFirstHint": {
+    "message": "Clic : traduction activée/désactivée · Clic droit : paramètres",
+    "description": "One-time tip shown near the player button on first use"
+  },
+  "noteReloadPage": {
+    "message": "L'extension a été mise à jour. Rechargez cette page pour continuer à traduire.",
+    "description": "Shown when the extension was updated while the page was open"
+  },
+  "noteSameLang": {
+    "message": "Les sous-titres de la vidéo sont déjà dans la langue cible, il n'y a rien à traduire.",
+    "description": "Panel note"
+  },
+  "toastTranslationOn": {
+    "message": "Traduction activée",
+    "description": "Toast when translation is enabled"
+  },
+  "toastTranslationOff": {
+    "message": "Traduction désactivée",
+    "description": "Toast when translation is disabled"
+  },
+  "btnBack": {
+    "message": "Retour",
+    "description": "Back button in subpages"
+  },
+  "navLanguage": {
+    "message": "Langue",
+    "description": "Language subpage row"
+  },
+  "navEngine": {
+    "message": "Moteur de traduction",
+    "description": "Translation engine subpage row"
+  },
+  "navTranscript": {
+    "message": "Transcription",
+    "description": "Transcript subpage row"
+  },
+  "navAppearance": {
+    "message": "Apparence",
+    "description": "Appearance subpage row"
+  },
+  "navAdvanced": {
+    "message": "Avancé",
+    "description": "Advanced subpage row"
+  },
+  "rowBgOpacity": {
+    "message": "Opacité de l'arrière-plan",
+    "description": "Label for background opacity slider"
+  },
+  "rowTextColor": {
+    "message": "Couleur du texte",
+    "description": "Label for subtitle text color presets"
+  },
+  "colorWhite": {
+    "message": "Blanc",
+    "description": "White subtitle color preset"
+  },
+  "colorYellow": {
+    "message": "Jaune",
+    "description": "Yellow subtitle color preset"
+  },
+  "colorGreen": {
+    "message": "Vert",
+    "description": "Green subtitle color preset"
+  },
+  "colorCyan": {
+    "message": "Cyan",
+    "description": "Cyan subtitle color preset"
+  },
+  "rowOrigPosition": {
+    "message": "Position de la ligne originale",
+    "description": "Label for original subtitle position"
+  },
+  "origPosAbove": {
+    "message": "Au-dessus de la traduction",
+    "description": "Original line above translation"
+  },
+  "origPosBelow": {
+    "message": "En dessous de la traduction",
+    "description": "Original line below translation"
+  },
+  "searchPlaceholder": {
+    "message": "Rechercher dans les sous-titres…",
+    "description": "Placeholder for transcript search input"
+  },
+  "transcriptEmpty": {
+    "message": "Aucun sous-titre chargé pour l'instant.",
+    "description": "Shown when transcript has no sentences"
+  },
+  "transcriptNoMatch": {
+    "message": "Aucune ligne correspondante trouvée.",
+    "description": "Shown when transcript search returns no results"
+  },
+  "btnCopy": {
+    "message": "Copier",
+    "description": "Copy transcript button"
+  },
+  "msgCopied": {
+    "message": "Copié",
+    "description": "Feedback after copying transcript"
+  },
+  "btnDownloadSrt": {
+    "message": "Télécharger .srt",
+    "description": "Download SRT subtitle button"
+  },
+  "btnDownloadTxt": {
+    "message": "Télécharger .txt",
+    "description": "Download TXT subtitle button"
+  },
+  "engineAuto": {
+    "message": "Automatique",
+    "description": "Automatic engine option"
+  },
+  "engineGoogle": {
+    "message": "Google",
+    "description": "Google engine option"
+  },
+  "engineGemini": {
+    "message": "Gemini",
+    "description": "Gemini engine option"
+  },
+  "engineGroq": {
+    "message": "Groq",
+    "description": "Groq engine option"
+  },
+  "engineCustom": {
+    "message": "Personnalisé (compatible OpenAI)",
+    "description": "Custom OpenAI-compatible engine option"
+  },
+  "labelCustomEndpoint": {
+    "message": "URL du point de terminaison",
+    "description": "Label for custom endpoint URL input"
+  },
+  "placeholderCustomEndpoint": {
+    "message": "https://api.openai.com/v1",
+    "description": "Placeholder for custom endpoint URL input"
+  },
+  "labelCustomModel": {
+    "message": "Nom du modèle",
+    "description": "Label for custom model name input"
+  },
+  "placeholderCustomModel": {
+    "message": "gpt-4o-mini",
+    "description": "Placeholder for custom model name input"
+  },
+  "labelCustomKey": {
+    "message": "Clé API",
+    "description": "Label for custom API key input"
+  },
+  "placeholderCustomKey": {
+    "message": "sk-...",
+    "description": "Placeholder for custom API key input"
+  },
+  "btnGrantAccess": {
+    "message": "Accorder l'accès",
+    "description": "Button to request host permission for custom endpoint"
+  },
+  "keyStatusPermission": {
+    "message": "Accès requis",
+    "description": "Key status badge when host permission is required"
+  },
+  "keyBadgePermission": {
+    "message": "Autorisation requise",
+    "description": "Detailed key status badge in popup when host permission is missing"
+  },
+  "issuePermission": {
+    "message": "L'autorisation d'accéder à l'URL du point de terminaison personnalisé n'a pas été accordée.",
+    "description": "Error message when custom host permission is not granted"
+  },
+  "issueEndpointHttps": {
+    "message": "Le point de terminaison doit être une URL valide commençant par https://",
+    "description": "Validation message when custom endpoint is not https"
+  },
+  "labelGeminiQuality": {
+    "message": "Qualité",
+    "description": "Label for Gemini quality model selection"
+  },
+  "qualityFast": {
+    "message": "Rapide",
+    "description": "Gemini quality option: fast"
+  },
+  "qualityBalanced": {
+    "message": "Équilibré",
+    "description": "Gemini quality option: balanced"
+  },
+  "qualityBest": {
+    "message": "Optimale",
+    "description": "Gemini quality option: best"
+  },
+  "shortcutNote": {
+    "message": "Raccourci : Alt+Shift+T (modifier sur chrome://extensions/shortcuts)",
+    "description": "Plain text note about extension keyboard shortcut"
+  },
+  "keyStatusValid": {
+    "message": "Vérifié",
+    "description": "Key status badge when valid"
+  },
+  "keyStatusInvalid": {
+    "message": "Non valide",
+    "description": "Key status badge when invalid"
+  },
+  "keyStatusQuota": {
+    "message": "Quota dépassé",
+    "description": "Key status badge when quota exceeded"
+  },
+  "keyStatusNetwork": {
+    "message": "Erreur réseau",
+    "description": "Key status badge on network error"
+  },
+  "keyStatusUnchecked": {
+    "message": "Non vérifié",
+    "description": "Key status badge when unchecked"
+  },
+  "keyStatusMissing": {
+    "message": "Ajouter une clé",
+    "description": "Plain text prompt when key is missing"
+  },
+  "keyAddInfo": {
+    "message": "Saisissez votre clé API dans le popup de l'extension depuis l'icône de la barre d'outils",
+    "description": "Instruction shown when clicking Add key"
+  },
+  "issueNokey": {
+    "message": "Aucune clé API ajoutée pour le moteur sélectionné.",
+    "description": "Error message for nokey code"
+  },
+  "issueInvalid": {
+    "message": "La clé API n'est pas valide ou a été rejetée.",
+    "description": "Error message for invalid code"
+  },
+  "issueQuota": {
+    "message": "Limite de requêtes ou quota dépassé, veuillez patienter un instant.",
+    "description": "Error message for quota code"
+  },
+  "issueNetwork": {
+    "message": "Échec de la connexion réseau.",
+    "description": "Error message for network code"
+  },
+  "issueTimeout": {
+    "message": "La demande de traduction a expiré.",
+    "description": "Error message for timeout code"
+  },
+  "issueServer": {
+    "message": "Le serveur de traduction est temporairement indisponible.",
+    "description": "Error message for server code"
+  },
+  "issueMismatch": {
+    "message": "La réponse du modèle ne correspond pas aux lignes de sous-titres.",
+    "description": "Error message for mismatch code"
+  },
+  "issueUnknown": {
+    "message": "Une erreur de traduction inattendue s'est produite.",
+    "description": "Error message for unknown code"
+  },
+  "rowVersion": {
+    "message": "Version",
+    "description": "Version label in advanced page"
+  },
+  "rowRepoPrivacy": {
+    "message": "Code source et confidentialité",
+    "description": "Repository and privacy link label"
+  },
+  "cmdToggleTranslation": {
+    "message": "Activer/désactiver la traduction",
+    "description": "Keyboard shortcut to toggle translation"
+  },
+  "cardGlossaryTitle": {
+    "message": "Glossaire",
+    "description": "Glossary card title"
+  },
+  "cardGlossaryDesc": {
+    "message": "Traductions personnalisées de termes (max 50). Exemples : « framework » (laisser non traduit), « framework = traduction ».",
+    "description": "Glossary card description"
+  },
+  "placeholderGlossary": {
+    "message": "framework\nframework = traduction",
+    "description": "Placeholder for glossary textarea"
+  }
+}

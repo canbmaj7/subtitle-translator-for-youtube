@@ -1,0 +1,478 @@
+{
+  "extName": {
+    "message": "Переводчик субтитров для YouTube",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Переводит субтитры YouTube на выбранный язык и плавно накладывает их на видео.",
+    "description": "Extension description"
+  },
+  "btnTitle": {
+    "message": "Перевод на $LANG$ — Клик: вкл/выкл перевод · Правый клик: настройки",
+    "description": "Tooltip for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnAriaLabel": {
+    "message": "Перевод на $LANG$ — Клик: вкл/выкл перевод · Правый клик: настройки",
+    "description": "Aria label for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "panelTitle": {
+    "message": "Переводчик субтитров",
+    "description": "Title of settings panel"
+  },
+  "rowTranslation": {
+    "message": "Перевод",
+    "description": "Label for translation toggle"
+  },
+  "rowTargetLang": {
+    "message": "Язык перевода",
+    "description": "Label for target language dropdown"
+  },
+  "rowShowOriginal": {
+    "message": "Показывать оригинал",
+    "description": "Label for original text toggle"
+  },
+  "rowFontSize": {
+    "message": "Размер шрифта",
+    "description": "Label for font size slider"
+  },
+  "statusEngine": {
+    "message": "Движок: $ENGINE$",
+    "description": "Current translation engine",
+    "placeholders": {
+      "engine": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusEngineNone": {
+    "message": "Движок: —",
+    "description": "No engine active yet"
+  },
+  "statusError": {
+    "message": "Ошибка перевода: $ERROR$",
+    "description": "Translation error message",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "googleKeyHint": {
+    "message": "Добавьте API-ключ во всплывающем окне расширения для более качественного перевода.",
+    "description": "Hint to add Gemini or Groq key"
+  },
+  "chipIdle": {
+    "message": "Ожидание",
+    "description": "Idle status for engine chip"
+  },
+  "chipReady": {
+    "message": "Готово",
+    "description": "Status chip text when idle or ready"
+  },
+  "chipError": {
+    "message": "Ошибка",
+    "description": "Status chip text when last translation failed"
+  },
+  "cardGeneral": {
+    "message": "Общие",
+    "description": "General settings card heading"
+  },
+  "optgroupPopular": {
+    "message": "Популярные языки",
+    "description": "Optgroup label for popular target languages"
+  },
+  "optgroupAll": {
+    "message": "Все языки",
+    "description": "Optgroup label for all target languages"
+  },
+  "cardAiTitle": {
+    "message": "Улучшенный перевод (бесплатный API-ключ)",
+    "description": "AI API key card heading"
+  },
+  "cardAiDesc": {
+    "message": "Без API-ключа используется Google Переводчик. Добавление ключа ИИ обеспечивает более естественный перевод с учетом контекста.",
+    "description": "Explanation of AI translation benefits"
+  },
+  "labelGemini": {
+    "message": "API-ключ Gemini",
+    "description": "Label for Gemini key field"
+  },
+  "badgeRecommended": {
+    "message": "Рекомендуется",
+    "description": "Badge for Gemini key"
+  },
+  "labelGroq": {
+    "message": "API-ключ Groq",
+    "description": "Label for Groq key field"
+  },
+  "badgeOptional": {
+    "message": "Запасной, необязательно",
+    "description": "Badge for Groq key"
+  },
+  "placeholderGeminiKey": {
+    "message": "AIza...",
+    "description": "Placeholder for Gemini API key"
+  },
+  "placeholderGroqKey": {
+    "message": "gsk_...",
+    "description": "Placeholder for Groq API key"
+  },
+  "getKeyLink": {
+    "message": "Получить ключ",
+    "description": "Link text to get an API key"
+  },
+  "btnShowKey": {
+    "message": "Показать ключ",
+    "description": "Tooltip and aria-label to show API key"
+  },
+  "btnHideKey": {
+    "message": "Скрыть ключ",
+    "description": "Tooltip and aria-label to hide API key"
+  },
+  "btnTestKey": {
+    "message": "Проверить",
+    "description": "Button to validate API key"
+  },
+  "keyStatusTesting": {
+    "message": "Проверка…",
+    "description": "Key status badge while validating"
+  },
+  "keyBadgeInvalid": {
+    "message": "Недействительный ключ",
+    "description": "Detailed key status badge in popup when invalid"
+  },
+  "keyBadgeNetwork": {
+    "message": "Ошибка сети, попробуйте позже",
+    "description": "Detailed key status badge in popup on network error"
+  },
+  "engineNoKey": {
+    "message": "нет ключа",
+    "description": "Note shown next to engine without API key in popup"
+  },
+  "privacyNote": {
+    "message": "Ключи хранятся локально в этом браузере и никогда не синхронизируются. При использовании ключа Gemini или Groq текст субтитров вместе с названием видео, названием канала, кратким фрагментом описания и соседними предложениями отправляется провайдеру в качестве контекста. На бесплатном тарифе Gemini отправленный контент может использоваться Google для улучшения продуктов.",
+    "description": "Privacy note for API keys"
+  },
+  "infoDefault": {
+    "message": "Перевод запускается автоматически для видео с субтитрами.",
+    "description": "Default hint in footer info bar"
+  },
+  "btnRetry": {
+    "message": "Повторить",
+    "description": "btnRetry"
+  },
+  "descWaitForTranslation": {
+    "message": "Краткая пауза, если перевод еще не готов",
+    "description": "descWaitForTranslation"
+  },
+  "rowWaitForTranslation": {
+    "message": "Ждать перевод",
+    "description": "rowWaitForTranslation"
+  },
+  "waitingText": {
+    "message": "Перевод…",
+    "description": "waitingText"
+  },
+  "progressReady": {
+    "message": "Перевод готов",
+    "description": "progressReady"
+  },
+  "progressTranslating": {
+    "message": "Перевод… $1/$2",
+    "description": "progressTranslating"
+  },
+  "progressFailed": {
+    "message": "Не удалось перевести секций: $1",
+    "description": "progressFailed"
+  },
+  "noteYtAuto": {
+    "message": "Собственный перевод YouTube на этот язык включен, поэтому расширение остается неактивным. Выберите оригинальные субтитры в настройках CC YouTube.",
+    "description": "Panel note"
+  },
+  "toastFirstHint": {
+    "message": "Клик: вкл/выкл перевод · Правый клик: настройки",
+    "description": "One-time tip shown near the player button on first use"
+  },
+  "noteReloadPage": {
+    "message": "Расширение обновлено. Обновите страницу, чтобы продолжить перевод.",
+    "description": "Shown when the extension was updated while the page was open"
+  },
+  "noteSameLang": {
+    "message": "Субтитры видео уже на выбранном языке, переводить нечего.",
+    "description": "Panel note"
+  },
+  "toastTranslationOn": {
+    "message": "Перевод включен",
+    "description": "Toast when translation is enabled"
+  },
+  "toastTranslationOff": {
+    "message": "Перевод выключен",
+    "description": "Toast when translation is disabled"
+  },
+  "btnBack": {
+    "message": "Назад",
+    "description": "Back button in subpages"
+  },
+  "navLanguage": {
+    "message": "Язык",
+    "description": "Language subpage row"
+  },
+  "navEngine": {
+    "message": "Движок перевода",
+    "description": "Translation engine subpage row"
+  },
+  "navTranscript": {
+    "message": "Транскрипт",
+    "description": "Transcript subpage row"
+  },
+  "navAppearance": {
+    "message": "Внешний вид",
+    "description": "Appearance subpage row"
+  },
+  "navAdvanced": {
+    "message": "Дополнительно",
+    "description": "Advanced subpage row"
+  },
+  "rowBgOpacity": {
+    "message": "Прозрачность фона",
+    "description": "Label for background opacity slider"
+  },
+  "rowTextColor": {
+    "message": "Цвет текста",
+    "description": "Label for subtitle text color presets"
+  },
+  "colorWhite": {
+    "message": "Белый",
+    "description": "White subtitle color preset"
+  },
+  "colorYellow": {
+    "message": "Желтый",
+    "description": "Yellow subtitle color preset"
+  },
+  "colorGreen": {
+    "message": "Зеленый",
+    "description": "Green subtitle color preset"
+  },
+  "colorCyan": {
+    "message": "Голубой",
+    "description": "Cyan subtitle color preset"
+  },
+  "rowOrigPosition": {
+    "message": "Положение оригинала",
+    "description": "Label for original subtitle position"
+  },
+  "origPosAbove": {
+    "message": "Над переводом",
+    "description": "Original line above translation"
+  },
+  "origPosBelow": {
+    "message": "Под переводом",
+    "description": "Original line below translation"
+  },
+  "searchPlaceholder": {
+    "message": "Поиск по субтитрам…",
+    "description": "Placeholder for transcript search input"
+  },
+  "transcriptEmpty": {
+    "message": "Субтитры еще не загружены.",
+    "description": "Shown when transcript has no sentences"
+  },
+  "transcriptNoMatch": {
+    "message": "Совпадений не найдено.",
+    "description": "Shown when transcript search returns no results"
+  },
+  "btnCopy": {
+    "message": "Копировать",
+    "description": "Copy transcript button"
+  },
+  "msgCopied": {
+    "message": "Скопировано",
+    "description": "Feedback after copying transcript"
+  },
+  "btnDownloadSrt": {
+    "message": "Скачать .srt",
+    "description": "Download SRT subtitle button"
+  },
+  "btnDownloadTxt": {
+    "message": "Скачать .txt",
+    "description": "Download TXT subtitle button"
+  },
+  "engineAuto": {
+    "message": "Автоматически",
+    "description": "Automatic engine option"
+  },
+  "engineGoogle": {
+    "message": "Google",
+    "description": "Google engine option"
+  },
+  "engineGemini": {
+    "message": "Gemini",
+    "description": "Gemini engine option"
+  },
+  "engineGroq": {
+    "message": "Groq",
+    "description": "Groq engine option"
+  },
+  "engineCustom": {
+    "message": "Пользовательский (OpenAI-совместимый)",
+    "description": "Custom OpenAI-compatible engine option"
+  },
+  "labelCustomEndpoint": {
+    "message": "URL эндпоинта",
+    "description": "Label for custom endpoint URL input"
+  },
+  "placeholderCustomEndpoint": {
+    "message": "https://api.openai.com/v1",
+    "description": "Placeholder for custom endpoint URL input"
+  },
+  "labelCustomModel": {
+    "message": "Название модели",
+    "description": "Label for custom model name input"
+  },
+  "placeholderCustomModel": {
+    "message": "gpt-4o-mini",
+    "description": "Placeholder for custom model name input"
+  },
+  "labelCustomKey": {
+    "message": "API-ключ",
+    "description": "Label for custom API key input"
+  },
+  "placeholderCustomKey": {
+    "message": "sk-...",
+    "description": "Placeholder for custom API key input"
+  },
+  "btnGrantAccess": {
+    "message": "Разрешить доступ",
+    "description": "Button to request host permission for custom endpoint"
+  },
+  "keyStatusPermission": {
+    "message": "Нужен доступ",
+    "description": "Key status badge when host permission is required"
+  },
+  "keyBadgePermission": {
+    "message": "Требуется разрешение",
+    "description": "Detailed key status badge in popup when host permission is missing"
+  },
+  "issuePermission": {
+    "message": "Разрешение на доступ к URL пользовательского эндпоинта не предоставлено.",
+    "description": "Error message when custom host permission is not granted"
+  },
+  "issueEndpointHttps": {
+    "message": "Эндпоинт должен быть корректным URL, начинающимся с https://",
+    "description": "Validation message when custom endpoint is not https"
+  },
+  "labelGeminiQuality": {
+    "message": "Качество",
+    "description": "Label for Gemini quality model selection"
+  },
+  "qualityFast": {
+    "message": "Быстрое",
+    "description": "Gemini quality option: fast"
+  },
+  "qualityBalanced": {
+    "message": "Сбалансированное",
+    "description": "Gemini quality option: balanced"
+  },
+  "qualityBest": {
+    "message": "Лучшее",
+    "description": "Gemini quality option: best"
+  },
+  "shortcutNote": {
+    "message": "Сочетание клавиш: Alt+Shift+T (изменить на chrome://extensions/shortcuts)",
+    "description": "Plain text note about extension keyboard shortcut"
+  },
+  "keyStatusValid": {
+    "message": "Проверен",
+    "description": "Key status badge when valid"
+  },
+  "keyStatusInvalid": {
+    "message": "Недействителен",
+    "description": "Key status badge when invalid"
+  },
+  "keyStatusQuota": {
+    "message": "Лимит исчерпан",
+    "description": "Key status badge when quota exceeded"
+  },
+  "keyStatusNetwork": {
+    "message": "Ошибка сети",
+    "description": "Key status badge on network error"
+  },
+  "keyStatusUnchecked": {
+    "message": "Не проверен",
+    "description": "Key status badge when unchecked"
+  },
+  "keyStatusMissing": {
+    "message": "Добавить ключ",
+    "description": "Plain text prompt when key is missing"
+  },
+  "keyAddInfo": {
+    "message": "Введите API-ключ во всплывающем окне расширения на панели инструментов",
+    "description": "Instruction shown when clicking Add key"
+  },
+  "issueNokey": {
+    "message": "API-ключ для выбранного движка не добавлен.",
+    "description": "Error message for nokey code"
+  },
+  "issueInvalid": {
+    "message": "API-ключ недействителен или отклонен.",
+    "description": "Error message for invalid code"
+  },
+  "issueQuota": {
+    "message": "Лимит запросов исчерпан, пожалуйста, подождите.",
+    "description": "Error message for quota code"
+  },
+  "issueNetwork": {
+    "message": "Сетевое подключение не удалось.",
+    "description": "Error message for network code"
+  },
+  "issueTimeout": {
+    "message": "Время ожидания запроса на перевод истекло.",
+    "description": "Error message for timeout code"
+  },
+  "issueServer": {
+    "message": "Сервер перевода временно недоступен.",
+    "description": "Error message for server code"
+  },
+  "issueMismatch": {
+    "message": "Ответ модели не совпал со строками субтитров.",
+    "description": "Error message for mismatch code"
+  },
+  "issueUnknown": {
+    "message": "Произошла непредвиденная ошибка перевода.",
+    "description": "Error message for unknown code"
+  },
+  "rowVersion": {
+    "message": "Версия",
+    "description": "Version label in advanced page"
+  },
+  "rowRepoPrivacy": {
+    "message": "Исходный код и конфиденциальность",
+    "description": "Repository and privacy link label"
+  },
+  "cmdToggleTranslation": {
+    "message": "Вкл/выкл перевод",
+    "description": "Keyboard shortcut to toggle translation"
+  },
+  "cardGlossaryTitle": {
+    "message": "Глоссарий",
+    "description": "Glossary card title"
+  },
+  "cardGlossaryDesc": {
+    "message": "Пользовательский перевод терминов (макс. 50). Примеры: \"framework\" (оставить без перевода), \"framework = перевод\".",
+    "description": "Glossary card description"
+  },
+  "placeholderGlossary": {
+    "message": "framework\nframework = перевод",
+    "description": "Placeholder for glossary textarea"
+  }
+}

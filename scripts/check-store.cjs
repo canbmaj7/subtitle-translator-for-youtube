@@ -24,8 +24,15 @@ for (const loc of Object.keys(msgs)) {
   desc.length <= 132 && !desc.includes('?>') ? ok(`[${loc}] açıklama ${desc.length}/132`) : bad(`[${loc}] açıklama ${desc.length} > 132 veya eksik`);
   if (/^youtube(?! için)/i.test(name)) bad(`[${loc}] ad "YouTube" ile başlıyor: marka ihlali riski, "... for YouTube" / "YouTube için ..." kullan`);
 }
-const keys = Object.keys(msgs).map((l) => JSON.stringify(Object.keys(msgs[l]).sort()));
-new Set(keys).size === 1 ? ok('iki dilin mesaj anahtarları aynı') : bad('locale anahtar kümeleri farklı');
+const baseKeys = Object.keys(msgs[m.default_locale] || {});
+let keyDiffs = 0;
+for (const loc of Object.keys(msgs)) {
+  const have = new Set(Object.keys(msgs[loc]));
+  const missing = baseKeys.filter((k) => !have.has(k));
+  const extra = [...have].filter((k) => !baseKeys.includes(k));
+  if (missing.length || extra.length) { keyDiffs++; bad(`[${loc}] eksik: ${missing.join(', ') || '-'} | fazla: ${extra.join(', ') || '-'}`); }
+}
+if (!keyDiffs) ok(`${Object.keys(msgs).length} dilin mesaj anahtarları aynı (${Object.keys(msgs).join(', ')})`);
 
 console.log('İkonlar');
 for (const s of [16, 32, 48, 128]) {

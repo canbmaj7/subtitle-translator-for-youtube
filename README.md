@@ -7,13 +7,14 @@ Translates YouTube captions into your preferred language and overlays them seaml
 
 ### Player Controls & Settings Panel
 - **Player button:** A dedicated translation button sits directly next to the `CC` button in the YouTube control bar.
+  - **Keyboard shortcut:** `Alt+Shift+T` toggles translation on/off (rebind it at `chrome://extensions/shortcuts`).
   - **Left click:** Toggles translation on/off instantly with an on-screen toast notification.
   - **Right click or Shift + click:** Opens the settings panel.
   - **Keyboard navigation:** Full support for `Esc` (closes menu or goes back), arrow keys, and `Enter`.
 - **YouTube gear-style settings panel:** A multi-page floating menu modeled after YouTube's native player settings:
   - **Main menu:** Quick translation toggle, active translation status chip, progress bar with retry button, and links to sub-pages.
   - **Language:** Select from 30+ target languages, toggle showing original subtitles alongside translations, or enable "wait for translation" mode.
-  - **Translation engine:** Select your active provider (**Auto**, **Google Translate**, **Google Gemini**, or **Groq**). In Auto mode, the extension automatically prioritizes Gemini -> Groq -> Google. When an engine is explicitly selected, the extension **does not silently fall back** on failure, giving you clear visibility into provider errors (quota, invalid key, or network issue).
+  - **Translation engine:** Select your active provider (**Auto**, **Google Translate**, **Google Gemini**, **Groq**, or a **Custom OpenAI-compatible** endpoint). In Auto mode, the extension automatically prioritizes Gemini -> Groq -> Custom -> Google. When an engine is explicitly selected, the extension **does not silently fall back** on failure, giving you clear visibility into provider errors (quota, invalid key, or network issue).
   - **Transcript:** View all captions and their translations side-by-side in real time.
     - Instant text search across original and translated text.
     - Click any sentence to jump the video to that timestamp.
@@ -33,13 +34,18 @@ Translates YouTube captions into your preferred language and overlays them seaml
 - **Translation cache:** Already translated caption chunks are stored on your device and reused, so reopening a video costs no extra API calls or quota. A Google-translated chunk is not reused once you have a working AI key, so quality can improve later.
 - **First-use tip:** A one-time hint explains that left click toggles translation and right click opens settings.
 - **Context-aware translation (AI engines only):** Video title, channel name, a short description excerpt and neighbouring sentences are passed to Gemini/Groq to pick domain terminology and fix speech-recognition errors; never sent to Google Translate.
+- **Gemini quality tiers:** Choose Fast, Balanced or Best for Gemini; if a model is unavailable or out of quota, the next one in the tier is tried.
+- **Custom OpenAI-compatible provider:** Point the extension at any HTTPS `/chat/completions` endpoint (your own model server, a gateway, etc.). Chrome/Edge/Firefox ask you to grant access to that one address; nothing else is contacted.
+- **Video summary (AI engines only):** Once per video, the AI writes a short summary (topic, domain, tone, key terms) from the title, channel, description and first sentences, and every translation request carries it so terminology stays consistent. The summary is cached on your device.
+- **Glossary:** Add your own rules in the popup (`framework` keeps a term untranslated, `framework = Framework` forces a specific translation). Rules apply to AI engines.
+- **Language per channel:** The target language you pick for a channel is remembered and applied automatically to that channel's other videos.
 - **Automatic key validation:** When you paste an API key into the popup, it is immediately tested against the provider's API. Live status badges indicate `Valid`, `Invalid`, `Quota exceeded`, or `Network error`.
 
 ### Performance & Subtitle Engine
-- **Sentence merging:** Caption fragments are reconstructed into complete, grammatically sound sentences based on punctuation and pauses before translation, avoiding choppy word-by-word outputs.
-- **Resilient translation pipeline:** Batched requests, timeout protection, automatic 3-step retries with exponential backoff, and localized translation around the playback head (−1 min / +10 min) to conserve API quotas on long videos.
+- **Sentence merging:** Caption fragments are reconstructed into complete, grammatically sound sentences based on punctuation and pauses before translation, avoiding choppy word-by-word outputs. Song lyrics (`♪` lines) and unpunctuated speech are split at sensible boundaries.
+- **Resilient translation pipeline:** Batched requests with a shared Google rate limiter (queue, binary splitting on line-count mismatch, cooldown on HTTP 429/5xx), timeout protection, automatic 3-step retries with exponential backoff, and localized translation around the playback head (−1 min / +10 min) to conserve API quotas on long videos.
 - **Smart idle / sleep mode:** Automatically sleeps when YouTube's native auto-translation is active or when the video's captions are already in the target language.
-- **Comprehensive language support:** Over 30 target languages, with full Right-to-Left (Arabic, Hebrew, Persian) and CJK (Chinese, Japanese, Korean) layout, typography, and punctuation handling. Default target language matches your browser's UI language.
+- **Comprehensive language support:** Over 30 target languages, with full Right-to-Left (Arabic, Hebrew, Persian) and CJK (Chinese, Japanese, Korean) layout, typography, and punctuation handling. Default target language matches your browser's UI language. The extension's own interface is available in English, Turkish, German, Spanish, French, Brazilian Portuguese, Russian and Arabic.
 - **Privacy by design:** No server, no user accounts, no analytics, no tracking. API keys remain strictly local in `chrome.storage.local` ([PRIVACY.md](PRIVACY.md)).
 
 ## Installation

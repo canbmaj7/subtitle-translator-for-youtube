@@ -1,0 +1,478 @@
+{
+  "extName": {
+    "message": "مترجم ترجمات YouTube",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "يترجم ترجمات YouTube إلى لغتك المختارة ويعرضها بسلاسة فوق الفيديو.",
+    "description": "Extension description"
+  },
+  "btnTitle": {
+    "message": "ترجمة إلى $LANG$ — انقر: تفعيل/إيقاف الترجمة · نقرة يمينية: الإعدادات",
+    "description": "Tooltip for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnAriaLabel": {
+    "message": "ترجمة إلى $LANG$ — انقر: تفعيل/إيقاف الترجمة · نقرة يمينية: الإعدادات",
+    "description": "Aria label for player button",
+    "placeholders": {
+      "lang": {
+        "content": "$1"
+      }
+    }
+  },
+  "panelTitle": {
+    "message": "مترجم الترجمات",
+    "description": "Title of settings panel"
+  },
+  "rowTranslation": {
+    "message": "الترجمة",
+    "description": "Label for translation toggle"
+  },
+  "rowTargetLang": {
+    "message": "اللغة المستهدفة",
+    "description": "Label for target language dropdown"
+  },
+  "rowShowOriginal": {
+    "message": "إظهار النص الأصلي",
+    "description": "Label for original text toggle"
+  },
+  "rowFontSize": {
+    "message": "حجم الخط",
+    "description": "Label for font size slider"
+  },
+  "statusEngine": {
+    "message": "المحرك: $ENGINE$",
+    "description": "Current translation engine",
+    "placeholders": {
+      "engine": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusEngineNone": {
+    "message": "المحرك: —",
+    "description": "No engine active yet"
+  },
+  "statusError": {
+    "message": "خطأ في الترجمة: $ERROR$",
+    "description": "Translation error message",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "googleKeyHint": {
+    "message": "أضف مفتاح API من نافذة الإضافة للحصول على ترجمات بجودة أعلى.",
+    "description": "Hint to add Gemini or Groq key"
+  },
+  "chipIdle": {
+    "message": "خامل",
+    "description": "Idle status for engine chip"
+  },
+  "chipReady": {
+    "message": "جاهز",
+    "description": "Status chip text when idle or ready"
+  },
+  "chipError": {
+    "message": "خطأ",
+    "description": "Status chip text when last translation failed"
+  },
+  "cardGeneral": {
+    "message": "عام",
+    "description": "General settings card heading"
+  },
+  "optgroupPopular": {
+    "message": "اللغات الشائعة",
+    "description": "Optgroup label for popular target languages"
+  },
+  "optgroupAll": {
+    "message": "جميع اللغات",
+    "description": "Optgroup label for all target languages"
+  },
+  "cardAiTitle": {
+    "message": "ترجمة أفضل (مفتاح API مجاني)",
+    "description": "AI API key card heading"
+  },
+  "cardAiDesc": {
+    "message": "بدون مفتاح API، تُستخدم ترجمة Google. إضافة مفتاح ذكاء اصطناعي تتيح ترجمات أكثر طبيعية وتراعي السياق.",
+    "description": "Explanation of AI translation benefits"
+  },
+  "labelGemini": {
+    "message": "مفتاح API لـ Gemini",
+    "description": "Label for Gemini key field"
+  },
+  "badgeRecommended": {
+    "message": "موصى به",
+    "description": "Badge for Gemini key"
+  },
+  "labelGroq": {
+    "message": "مفتاح API لـ Groq",
+    "description": "Label for Groq key field"
+  },
+  "badgeOptional": {
+    "message": "احتياطي، اختياري",
+    "description": "Badge for Groq key"
+  },
+  "placeholderGeminiKey": {
+    "message": "AIza...",
+    "description": "Placeholder for Gemini API key"
+  },
+  "placeholderGroqKey": {
+    "message": "gsk_...",
+    "description": "Placeholder for Groq API key"
+  },
+  "getKeyLink": {
+    "message": "الحصول على مفتاح",
+    "description": "Link text to get an API key"
+  },
+  "btnShowKey": {
+    "message": "إظهار المفتاح",
+    "description": "Tooltip and aria-label to show API key"
+  },
+  "btnHideKey": {
+    "message": "إخفاء المفتاح",
+    "description": "Tooltip and aria-label to hide API key"
+  },
+  "btnTestKey": {
+    "message": "اختبار",
+    "description": "Button to validate API key"
+  },
+  "keyStatusTesting": {
+    "message": "جارٍ الاختبار…",
+    "description": "Key status badge while validating"
+  },
+  "keyBadgeInvalid": {
+    "message": "مفتاح غير صالح",
+    "description": "Detailed key status badge in popup when invalid"
+  },
+  "keyBadgeNetwork": {
+    "message": "خطأ في الشبكة، أعد المحاولة لاحقاً",
+    "description": "Detailed key status badge in popup on network error"
+  },
+  "engineNoKey": {
+    "message": "لا يوجد مفتاح",
+    "description": "Note shown next to engine without API key in popup"
+  },
+  "privacyNote": {
+    "message": "تُحفظ المفاتيح محلياً في هذا المتصفح ولا تتم مزامنتها أبداً. عند استخدام مفتاح Gemini أو Groq، يتم إرسال نص الترجمة مع عنوان الفيديو واسم القناة ومقتطف قصير من الوصف والجمل المجاورة إلى المزود كسياق. في الفئة المجانية لـ Gemini، قد تستخدم Google المحتوى المرسل لتحسين المنتجات.",
+    "description": "Privacy note for API keys"
+  },
+  "infoDefault": {
+    "message": "تبدأ الترجمة تلقائياً في مقاطع الفيديو التي تحتوي على ترجمات.",
+    "description": "Default hint in footer info bar"
+  },
+  "btnRetry": {
+    "message": "إعادة المحاولة",
+    "description": "btnRetry"
+  },
+  "descWaitForTranslation": {
+    "message": "إيقاف مؤقت إذا لم تكن الترجمة جاهزة بعد",
+    "description": "descWaitForTranslation"
+  },
+  "rowWaitForTranslation": {
+    "message": "انتظار الترجمة",
+    "description": "rowWaitForTranslation"
+  },
+  "waitingText": {
+    "message": "جارٍ الترجمة…",
+    "description": "waitingText"
+  },
+  "progressReady": {
+    "message": "الترجمة جاهزة",
+    "description": "progressReady"
+  },
+  "progressTranslating": {
+    "message": "جارٍ الترجمة… $1/$2",
+    "description": "progressTranslating"
+  },
+  "progressFailed": {
+    "message": "تعذر ترجمة $1 من الأقسام",
+    "description": "progressFailed"
+  },
+  "noteYtAuto": {
+    "message": "ترجمة YouTube التلقائية مفعلة لهذه اللغة، لذا تظل الإضافة غير نشطة. اختر الترجمة الأصلية من إعدادات CC في YouTube.",
+    "description": "Panel note"
+  },
+  "toastFirstHint": {
+    "message": "انقر: تفعيل/إيقاف الترجمة · نقرة يمينية: الإعدادات",
+    "description": "One-time tip shown near the player button on first use"
+  },
+  "noteReloadPage": {
+    "message": "تم تحديث الإضافة. أعد تحميل هذه الصفحة لمتابعة الترجمة.",
+    "description": "Shown when the extension was updated while the page was open"
+  },
+  "noteSameLang": {
+    "message": "ترجمة الفيديو باللغة المستهدفة بالفعل، لا يوجد شيء لترجمته.",
+    "description": "Panel note"
+  },
+  "toastTranslationOn": {
+    "message": "تم تفعيل الترجمة",
+    "description": "Toast when translation is enabled"
+  },
+  "toastTranslationOff": {
+    "message": "تم إيقاف الترجمة",
+    "description": "Toast when translation is disabled"
+  },
+  "btnBack": {
+    "message": "رجوع",
+    "description": "Back button in subpages"
+  },
+  "navLanguage": {
+    "message": "اللغة",
+    "description": "Language subpage row"
+  },
+  "navEngine": {
+    "message": "محرك الترجمة",
+    "description": "Translation engine subpage row"
+  },
+  "navTranscript": {
+    "message": "نص الفيديو",
+    "description": "Transcript subpage row"
+  },
+  "navAppearance": {
+    "message": "المظهر",
+    "description": "Appearance subpage row"
+  },
+  "navAdvanced": {
+    "message": "إعدادات متقدمة",
+    "description": "Advanced subpage row"
+  },
+  "rowBgOpacity": {
+    "message": "عتامة الخلفية",
+    "description": "Label for background opacity slider"
+  },
+  "rowTextColor": {
+    "message": "لون النص",
+    "description": "Label for subtitle text color presets"
+  },
+  "colorWhite": {
+    "message": "أبيض",
+    "description": "White subtitle color preset"
+  },
+  "colorYellow": {
+    "message": "أصفر",
+    "description": "Yellow subtitle color preset"
+  },
+  "colorGreen": {
+    "message": "أخضر",
+    "description": "Green subtitle color preset"
+  },
+  "colorCyan": {
+    "message": "سماوي",
+    "description": "Cyan subtitle color preset"
+  },
+  "rowOrigPosition": {
+    "message": "موضع السطر الأصلي",
+    "description": "Label for original subtitle position"
+  },
+  "origPosAbove": {
+    "message": "أعلى الترجمة",
+    "description": "Original line above translation"
+  },
+  "origPosBelow": {
+    "message": "أسفل الترجمة",
+    "description": "Original line below translation"
+  },
+  "searchPlaceholder": {
+    "message": "البحث في الترجمات…"
+    ,"description": "Placeholder for transcript search input"
+  },
+  "transcriptEmpty": {
+    "message": "لم يتم تحميل أي ترجمة بعد.",
+    "description": "Shown when transcript has no sentences"
+  },
+  "transcriptNoMatch": {
+    "message": "لم يتم العثور على أسطر مطابقة.",
+    "description": "Shown when transcript search returns no results"
+  },
+  "btnCopy": {
+    "message": "نسخ",
+    "description": "Copy transcript button"
+  },
+  "msgCopied": {
+    "message": "تم النسخ",
+    "description": "Feedback after copying transcript"
+  },
+  "btnDownloadSrt": {
+    "message": "تنزيل .srt",
+    "description": "Download SRT subtitle button"
+  },
+  "btnDownloadTxt": {
+    "message": "تنزيل .txt",
+    "description": "Download TXT subtitle button"
+  },
+  "engineAuto": {
+    "message": "تلقائي",
+    "description": "Automatic engine option"
+  },
+  "engineGoogle": {
+    "message": "Google",
+    "description": "Google engine option"
+  },
+  "engineGemini": {
+    "message": "Gemini",
+    "description": "Gemini engine option"
+  },
+  "engineGroq": {
+    "message": "Groq",
+    "description": "Groq engine option"
+  },
+  "engineCustom": {
+    "message": "مخصص (متوافق مع OpenAI)",
+    "description": "Custom OpenAI-compatible engine option"
+  },
+  "labelCustomEndpoint": {
+    "message": "عنوان URL لنقطة النهاية",
+    "description": "Label for custom endpoint URL input"
+  },
+  "placeholderCustomEndpoint": {
+    "message": "https://api.openai.com/v1",
+    "description": "Placeholder for custom endpoint URL input"
+  },
+  "labelCustomModel": {
+    "message": "اسم النموذج",
+    "description": "Label for custom model name input"
+  },
+  "placeholderCustomModel": {
+    "message": "gpt-4o-mini",
+    "description": "Placeholder for custom model name input"
+  },
+  "labelCustomKey": {
+    "message": "مفتاح API",
+    "description": "Label for custom API key input"
+  },
+  "placeholderCustomKey": {
+    "message": "sk-...",
+    "description": "Placeholder for custom API key input"
+  },
+  "btnGrantAccess": {
+    "message": "منح إذن الوصول",
+    "description": "Button to request host permission for custom endpoint"
+  },
+  "keyStatusPermission": {
+    "message": "بحاجة إلى إذن",
+    "description": "Key status badge when host permission is required"
+  },
+  "keyBadgePermission": {
+    "message": "الإذن مطلوب",
+    "description": "Detailed key status badge in popup when host permission is missing"
+  },
+  "issuePermission": {
+    "message": "لم يتم منح إذن الوصول إلى عنوان URL المخصص لنقطة النهاية.",
+    "description": "Error message when custom host permission is not granted"
+  },
+  "issueEndpointHttps": {
+    "message": "يجب أن تكون نقطة النهاية عنوان URL صالحاً يبدأ بـ https://",
+    "description": "Validation message when custom endpoint is not https"
+  },
+  "labelGeminiQuality": {
+    "message": "الجودة",
+    "description": "Label for Gemini quality model selection"
+  },
+  "qualityFast": {
+    "message": "سريع",
+    "description": "Gemini quality option: fast"
+  },
+  "qualityBalanced": {
+    "message": "متوازن",
+    "description": "Gemini quality option: balanced"
+  },
+  "qualityBest": {
+    "message": "الأفضل",
+    "description": "Gemini quality option: best"
+  },
+  "shortcutNote": {
+    "message": "الاختصار: Alt+Shift+T (التغيير في chrome://extensions/shortcuts)",
+    "description": "Plain text note about extension keyboard shortcut"
+  },
+  "keyStatusValid": {
+    "message": "تم التحقق",
+    "description": "Key status badge when valid"
+  },
+  "keyStatusInvalid": {
+    "message": "غير صالح",
+    "description": "Key status badge when invalid"
+  },
+  "keyStatusQuota": {
+    "message": "تم تجاوز الحصة",
+    "description": "Key status badge when quota exceeded"
+  },
+  "keyStatusNetwork": {
+    "message": "خطأ في الشبكة",
+    "description": "Key status badge on network error"
+  },
+  "keyStatusUnchecked": {
+    "message": "لم يتم الفحص",
+    "description": "Key status badge when unchecked"
+  },
+  "keyStatusMissing": {
+    "message": "إضافة مفتاح",
+    "description": "Plain text prompt when key is missing"
+  },
+  "keyAddInfo": {
+    "message": "أدخل مفتاح API في نافذة الإضافة من أيقونة شريط الأدوات",
+    "description": "Instruction shown when clicking Add key"
+  },
+  "issueNokey": {
+    "message": "لم تتم إضافة مفتاح API للمحرك المحدد.",
+    "description": "Error message for nokey code"
+  },
+  "issueInvalid": {
+    "message": "مفتاح API غير صالح أو تم رفضه.",
+    "description": "Error message for invalid code"
+  },
+  "issueQuota": {
+    "message": "تم تجاوز حد الطلبات أو الحصة، يرجى الانتظار قليلاً.",
+    "description": "Error message for quota code"
+  },
+  "issueNetwork": {
+    "message": "فشل الاتصال بالشبكة.",
+    "description": "Error message for network code"
+  },
+  "issueTimeout": {
+    "message": "انتهت مهلة طلب الترجمة.",
+    "description": "Error message for timeout code"
+  },
+  "issueServer": {
+    "message": "خادم الترجمة غير متاح مؤقتاً.",
+    "description": "Error message for server code"
+  },
+  "issueMismatch": {
+    "message": "استجابة النموذج لم تتطابق مع أسطر الترجمة.",
+    "description": "Error message for mismatch code"
+  },
+  "issueUnknown": {
+    "message": "حدث خطأ غير متوقع في الترجمة.",
+    "description": "Error message for unknown code"
+  },
+  "rowVersion": {
+    "message": "الإصدار",
+    "description": "Version label in advanced page"
+  },
+  "rowRepoPrivacy": {
+    "message": "الرمز المصدري والخصوصية",
+    "description": "Repository and privacy link label"
+  },
+  "cmdToggleTranslation": {
+    "message": "تفعيل/إيقاف الترجمة",
+    "description": "Keyboard shortcut to toggle translation"
+  },
+  "cardGlossaryTitle": {
+    "message": "قاموس المصطلحات",
+    "description": "Glossary card title"
+  },
+  "cardGlossaryDesc": {
+    "message": "ترجمات مخصصة للمصطلحات (حد أقصى 50). أمثلة: \"framework\" (إبقاء الكلمة دون ترجمة)، \"framework = ترجمة\".",
+    "description": "Glossary card description"
+  },
+  "placeholderGlossary": {
+    "message": "framework\nframework = ترجمة",
+    "description": "Placeholder for glossary textarea"
+  }
+}

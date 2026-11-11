@@ -19,11 +19,16 @@
 - Extension ID: `subtitle-translator@canbmaj7.github.io` (defined in the Firefox manifest; cannot be changed).
 
 ## What changed in 0.6.0 (Release Notes)
-- Context-aware translation: with a Gemini or Groq key, the video title, channel and nearby sentences help the AI pick the right terminology.
+- Context-aware AI translation: with a Gemini, Groq or custom key, a one-time video summary (topic, domain, key terms), the title, channel and nearby sentences help the AI pick the right terminology.
+- Glossary: keep terms untranslated or force a specific translation (AI engines).
+- New engines: Gemini quality tiers (Fast / Balanced / Best) and a custom OpenAI-compatible endpoint (access granted per address).
+- Google Translate path hardened: request queue with rate limiting, smarter handling of line mismatches, automatic cooldown after HTTP 429/5xx.
+- Better sentence merging for song lyrics and unpunctuated speech.
 - Translation cache: already translated caption chunks are reused from local storage, so reopening a video costs no extra API calls.
-- Redesigned player button: Left-click opens settings panel; right-click or Shift+click quickly toggles translation on/off with toast notification.
+- Redesigned player button: left-click toggles translation on/off with an on-screen toast; right-click or Shift+click opens the settings panel. New keyboard shortcut: Alt+Shift+T.
+- Remembers the target language per channel.
+- Interface now available in 8 languages: English, Turkish, German, Spanish, French, Brazilian Portuguese, Russian and Arabic.
 - YouTube gear-style settings menu with sub-pages: Language, Translation engine, Transcript, Appearance, and Advanced.
-- Direct engine selection (Auto, Google Translate, Gemini, Groq) with clear error reporting (no silent fallback when a specific engine fails).
-- Real-time API key validation in the popup with status badges (Valid, Invalid, Quota exceeded, Network error).
-- Built-in Transcript viewer: search captions, click-to-seek, copy, and download `.srt` / `.txt` with zero additional network requests.
-- Appearance customizations: font size slider (60%–200%), background opacity (0%–100%), color presets, and original subtitle positioning.
+- Translation engine selection with clear error reporting (no silent fallback when a specific engine fails) and real-time API key validation.
+- Built-in Transcript viewer: real-time search, click-to-seek, clipboard copy, and `.srt` / `.txt` download without extra network requests.
+- New icon and a redesigned popup.
