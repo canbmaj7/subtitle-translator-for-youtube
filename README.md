@@ -6,9 +6,9 @@ Translates YouTube captions into your preferred language and overlays them seaml
 ## Features
 
 ### Player Controls & Settings Panel
-- **Player button:** A dedicated translation button (`TR`) sits directly next to the `CC` button in the YouTube control bar.
-  - **Left click:** Opens the settings panel.
-  - **Right click or Shift + click:** Toggles translation on/off instantly with an on-screen toast notification.
+- **Player button:** A dedicated translation button sits directly next to the `CC` button in the YouTube control bar.
+  - **Left click:** Toggles translation on/off instantly with an on-screen toast notification.
+  - **Right click or Shift + click:** Opens the settings panel.
   - **Keyboard navigation:** Full support for `Esc` (closes menu or goes back), arrow keys, and `Enter`.
 - **YouTube gear-style settings panel:** A multi-page floating menu modeled after YouTube's native player settings:
   - **Main menu:** Quick translation toggle, active translation status chip, progress bar with retry button, and links to sub-pages.
@@ -30,6 +30,7 @@ Translates YouTube captions into your preferred language and overlays them seaml
 ### Translation & AI Engines
 - **Works out of the box:** Default Google Translate endpoint requires no API keys or setup.
 - **AI-powered translations:** Add your free **Google Gemini** ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) or **Groq** ([console.groq.com/keys](https://console.groq.com/keys)) key in the extension popup for higher-quality, natural translations.
+- **Context-aware translation (AI engines only):** Video title, channel name, a short description excerpt and neighbouring sentences are passed to Gemini/Groq to pick domain terminology and fix speech-recognition errors; never sent to Google Translate.
 - **Automatic key validation:** When you paste an API key into the popup, it is immediately tested against the provider's API. Live status badges indicate `Valid`, `Invalid`, `Quota exceeded`, or `Network error`.
 
 ### Performance & Subtitle Engine
@@ -103,7 +104,6 @@ Store submission guides: [`docs/store/`](docs/store/).
 ## Roadmap
 
 - Translation cache (reduce redundant API calls for previously translated video segments)
-- Context-aware translation (supplying video title, channel name, and surrounding sentences to LLM engines)
 - End-to-end automated testing and live Firefox testing
 - Speech recognition (on-the-fly captioning for videos lacking native subtitles)
 - Chrome Web Store release

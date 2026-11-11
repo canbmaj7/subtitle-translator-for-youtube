@@ -11,7 +11,7 @@
 
   const COLOR_PRESETS = [
     { id: 'white', hex: '#ffffff', labelKey: 'colorWhite' },
-    { id: 'yellow', hex: '#ffeb3b', labelKey: 'colorYellow' },
+    { id: 'yellow', hex: '#ffc53d', labelKey: 'colorYellow' },
     { id: 'green', hex: '#4ade80', labelKey: 'colorGreen' },
     { id: 'cyan', hex: '#22d3ee', labelKey: 'colorCyan' },
   ];
@@ -31,6 +31,7 @@
     if (COLOR_MAP[raw]) return raw;
     if (HEX_TO_ID[raw]) return HEX_TO_ID[raw];
     if (raw === '#fff') return 'white';
+    if (raw === '#ffeb3b') return 'yellow';
     return DEFAULTS.textColor;
   }
 

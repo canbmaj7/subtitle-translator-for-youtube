@@ -46,6 +46,25 @@
     return e;
   };
 
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function makeChevronRight() {
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.setAttribute('width', '12');
+    svg.setAttribute('height', '12');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('class', 'ytr-row-arrow-svg');
+    const path = document.createElementNS(SVGNS, 'path');
+    path.setAttribute('d', 'M6 3.5 L10.5 8 L6 12.5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+    return svg;
+  }
+
   function makeSwitch() {
     const wrap = el('span', 'ytr-switch');
     wrap.setAttribute('aria-hidden', 'true');
@@ -84,7 +103,9 @@
     r.tabIndex = 0;
     const right = el('span', 'ytr-row-right');
     const val = el('span', 'ytr-row-value');
-    right.append(val, el('span', 'ytr-row-arrow', '›'));
+    const arr = el('span', 'ytr-row-arrow');
+    arr.appendChild(makeChevronRight());
+    right.append(val, arr);
     r.append(el('span', 'ytr-row-label', labelText), right);
     r.addEventListener('click', (e) => { e.stopPropagation(); onOpen(pageId); });
     return { row: r, val };
@@ -95,7 +116,7 @@
     r.setAttribute('role', 'menuitem');
     r.tabIndex = 0;
     const left = el('span', 'ytr-back-left');
-    left.append(el('span', 'ytr-back-arrow', '‹'), el('span', 'ytr-back-text', ns.t('btnBack')));
+    left.append(el('span', 'ytr-back-arrow', '←'), el('span', 'ytr-back-text', ns.t('btnBack')));
     r.append(left, el('span', 'ytr-subpage-title', titleText));
     r.addEventListener('click', (e) => { e.stopPropagation(); onBack(); });
     return r;

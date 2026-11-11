@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "btnTitle": {
-    "message": "$LANG$ translation — Left click: settings · Right click / Shift+click: quick on/off",
+    "message": "$LANG$ translation — Click: toggle translation · Right-click: settings",
     "description": "Tooltip for player button",
     "placeholders": {
       "lang": {
@@ -17,7 +17,7 @@
     }
   },
   "btnAriaLabel": {
-    "message": "$LANG$ translation",
+    "message": "$LANG$ translation — Click: toggle translation · Right-click: settings",
     "description": "Aria label for player button",
     "placeholders": {
       "lang": {

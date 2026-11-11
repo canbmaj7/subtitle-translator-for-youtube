@@ -22,18 +22,26 @@
   }) => {
     // 1) Chunk'lara böl: en fazla 25 cümle ve 2500 karakter
     const chunks = [];
-    let cur = [], len = 0;
-    for (const s of sentences) {
+    let cur = [], len = 0, startIdx = 0;
+    for (let i = 0; i < sentences.length; i++) {
+      const s = sentences[i];
       const textLen = (s.text || '').length;
       if (cur.length >= 25 || (cur.length > 0 && len + textLen > 2500)) {
+        cur.startIdx = startIdx;
+        cur.endIdx = i - 1;
         chunks.push(cur);
         cur = [];
         len = 0;
+        startIdx = i;
       }
       cur.push(s);
       len += textLen + 1;
     }
-    if (cur.length) chunks.push(cur);
+    if (cur.length) {
+      cur.startIdx = startIdx;
+      cur.endIdx = sentences.length - 1;
+      chunks.push(cur);
+    }
 
     chunks.forEach((c) => {
       c.s = c[0].s;
@@ -43,6 +51,13 @@
       c.fails = 0;
       c.retryAt = 0;
       c.failed = false;
+      const bStart = Math.max(0, c.startIdx - 4);
+      const beforeSlice = sentences.slice(bStart, c.startIdx);
+      const afterSlice = sentences.slice(c.endIdx + 1, c.endIdx + 3);
+      c.ctx = {
+        before: beforeSlice.map((s) => (s && s.text != null ? String(s.text) : '')),
+        after: afterSlice.map((s) => (s && s.text != null ? String(s.text) : '')),
+      };
     });
 
     let stopped = false;
@@ -117,7 +132,7 @@
             notifyProgress();
             let res = null;
             try {
-              res = await send(chunk.map((c) => c.text));
+              res = await send(chunk.map((c) => c.text), chunk.ctx || { before: [], after: [] });
             } catch (err) {
               res = { ok: false, error: err };
             }
@@ -158,7 +173,7 @@
     };
 
     const ensureWorkers = () => {
-      if (isStale()) return;
+      if (isStale() || !chunks.length) return; // boş listede işçi hemen biter, döngü sonsuza gider
       while (runningWorkers < WORKER_COUNT) {
         runWorker();
       }

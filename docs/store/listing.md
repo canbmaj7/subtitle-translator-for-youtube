@@ -29,12 +29,12 @@ Translate the captions of the YouTube video being watched into the user's chosen
 
 ## Permission Justifications
 - `storage`: Saves user preferences (sync) and user-entered API keys (local).
-- `host youtube.com` (content script): Reads caption text from the video player, renders translated subtitles over the video, and mounts player controls.
-- `host translate.googleapis.com / generativelanguage.googleapis.com / api.groq.com`: Sends caption text to the selected translation service and validates user-provided API keys directly.
+- `host youtube.com` (content script): Reads caption text and video metadata (title, channel, short description for AI context) from the video player, renders translated subtitles over the video, and mounts player controls.
+- `host translate.googleapis.com / generativelanguage.googleapis.com / api.groq.com`: Sends caption text (plus surrounding context sentences and video metadata when using Gemini or Groq) to the selected translation service, and validates user-provided API keys directly.
 - No remote code: All executable code is completely self-contained within the package.
 
 ## Data Usage Declaration (Privacy Practices Tab)
-- Collected data: "Website content" (caption text) — sent solely to third-party translation endpoints (Google, Gemini, or Groq) to perform translation. "Authentication information" (user API keys) — stored exclusively on the user's local device.
+- Collected data: "Website content" (caption text, plus sanitized video title, channel name, short description excerpt, and nearby sentences when using Gemini or Groq) — sent solely to third-party translation endpoints (Google, Gemini, or Groq) directly from the user's browser to perform translation. Context data is never sent to Google Translate; we operate no remote servers. "Authentication information" (user API keys) — stored exclusively on the user's local device.
 - Affirmations: We do not sell user data; we do not use or transfer user data for purposes unrelated to the extension's core functionality; we do not use data for creditworthiness or lending determinations.
 - Privacy policy URL: https://github.com/canbmaj7/subtitle-translator-for-youtube/blob/main/PRIVACY.md
 
@@ -43,6 +43,7 @@ Translate the captions of the YouTube video being watched into the user's chosen
 - Small promo tile (440×280): `docs/store/assets/edge-promo-440x280.png`; large promo tile (1400×560, optional)
 
 ## What Changed in 0.6.0 (Release Notes)
+- Context-aware translation: with a Gemini or Groq key, the video title, channel and nearby sentences help the AI pick the right terminology.
 - Redesigned player button: Left-click opens the settings panel; right-click or Shift+click toggles translation on/off with an on-screen toast.
 - YouTube gear-style settings menu with sub-pages: Language, Translation engine, Transcript, Appearance, and Advanced.
 - Translation engine selection (Auto, Google Translate, Gemini, Groq) with clear error reporting (no silent fallback when a specific engine fails).

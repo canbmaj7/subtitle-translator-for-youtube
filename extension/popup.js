@@ -1,58 +1,10 @@
 (() => {
   const ns = (globalThis.YTR = globalThis.YTR || {});
+  const logic = ns.popup || (typeof require !== 'undefined' ? require('./popup-logic.js') : {});
+  const { popupKeyBadge, decideKeyAction, engineOptionState, formatEngineIssue } = logic;
   const t = (k, subs) => (ns.t ? ns.t(k, subs) : (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getMessage(k, subs)) || k);
 
-  const POPUP_BADGE_MAP = {
-    valid: { msgKey: 'keyStatusValid', tone: 'green' },
-    invalid: { msgKey: 'keyBadgeInvalid', tone: 'red' },
-    quota: { msgKey: 'keyStatusQuota', tone: 'orange' },
-    network: { msgKey: 'keyBadgeNetwork', tone: 'gray' },
-    unchecked: { msgKey: 'keyStatusUnchecked', tone: 'gray' },
-  };
-
-  function popupKeyBadge(provider, rawKey, keyStatus, isTesting) {
-    const p = String(provider || '').toLowerCase();
-    const info = ns.keyBadgeInfo ? ns.keyBadgeInfo(keyStatus, p) : { hasKey: false, state: 'missing' };
-    const hasKey = rawKey !== undefined && rawKey !== null ? Boolean(String(rawKey).trim()) : Boolean(info.hasKey);
-    if (!hasKey) return { visible: false, state: 'missing', msgKey: '', tone: '' };
-    if (isTesting) return { visible: true, state: 'testing', msgKey: 'keyStatusTesting', tone: 'gray' };
-    const st = info.hasKey && POPUP_BADGE_MAP[info.state] ? info.state : 'unchecked';
-    const spec = POPUP_BADGE_MAP[st];
-    return { visible: true, state: st, msgKey: spec.msgKey, tone: spec.tone };
-  }
-
-  function decideKeyAction(rawValue, prevSavedValue, trigger) {
-    const value = String(rawValue == null ? '' : rawValue).trim();
-    const prev = String(prevSavedValue == null ? '' : prevSavedValue).trim();
-    const trig = String(trigger || 'blur').toLowerCase();
-    if (!value) {
-      if (trig === 'input' && !prev) return { action: 'noop', value: '', shouldSave: false, shouldValidate: false };
-      return { action: 'clear', value: '', shouldSave: value !== prev, shouldValidate: false };
-    }
-    if (trig === 'input' || (trig === 'blur' && value === prev)) {
-      return { action: 'noop', value, shouldSave: false, shouldValidate: false };
-    }
-    return { action: 'validate', value, shouldSave: value !== prev || trig === 'paste', shouldValidate: true };
-  }
-
-  function engineOptionState(engineCode, keys, keyStatus) {
-    const code = String(engineCode || 'auto').toLowerCase();
-    const labelKey = ns.engineLabelKey ? ns.engineLabelKey(code) : 'engineAuto';
-    if (code !== 'gemini' && code !== 'groq') return { code, labelKey, hasKey: true, dim: false, noteKey: '' };
-    const field = code === 'gemini' ? 'geminiKey' : 'groqKey';
-    const hasRaw = keys && typeof keys === 'object' && keys[field] !== undefined && keys[field] !== null;
-    const hasKey = hasRaw ? Boolean(String(keys[field]).trim()) : Boolean(ns.keyBadgeInfo && ns.keyBadgeInfo(keyStatus, code).hasKey);
-    return { code, labelKey, hasKey, dim: !hasKey, noteKey: hasKey ? '' : 'engineNoKey' };
-  }
-
-  function formatEngineIssue(enginePref, lastIssues, trFn) {
-    const tr = typeof trFn === 'function' ? trFn : t;
-    const issue = ns.findRelevantIssue ? ns.findRelevantIssue(enginePref, lastIssues) : null;
-    if (!issue) return null;
-    return { engine: issue.engine, code: issue.code, msgKey: issue.msgKey, text: (issue.engine ? issue.engine + ': ' : '') + tr(issue.msgKey) };
-  }
-
-  const popupApi = { popupKeyBadge, decideKeyAction, engineOptionState, formatEngineIssue };
+  const popupApi = logic;
   ns.popup = popupApi;
   if (typeof module !== 'undefined') module.exports = popupApi;
   if (typeof document === 'undefined' || !document.getElementById) return;
@@ -68,7 +20,7 @@
     vTag.textContent = 'v' + chrome.runtime.getManifest().version;
   }
 
-  // Hedef dil seçenekleri (popüler diller üstte, kalanı alfabetik)
+  // Hedef dil seçenekleri
   const selTarget = document.getElementById('target');
   const popular = ['tr', 'en', 'de', 'fr', 'es'];
   const allLangs = Array.isArray(ns.LANGS) ? ns.LANGS : popular;
@@ -85,7 +37,7 @@
     selTarget.appendChild(grp);
   };
   const popCodes = popular.filter((c) => allLangs.includes(c));
-  const remaining = allLangs.filter((c) => !popular.includes(c)).sort((a, b) => labelOf(a).localeCompare(labelOf(b), undefined, { sensitivity: 'base' }));
+  const remaining = allLangs.filter((c) => !popular.includes(c)).sort((a, b) => labelOf(a).localeCompare(b, undefined, { sensitivity: 'base' }));
   addGroup(t('optgroupPopular'), popCodes);
   addGroup(t('optgroupAll'), remaining);
 
@@ -260,12 +212,31 @@
     ref.testBtn.addEventListener('click', () => handleKeyTrigger(prov, 'test'));
   }
 
-  const svgNode = (str) => document.importNode(new DOMParser().parseFromString(str, 'image/svg+xml').documentElement, true);
-  const EYE_ON = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-  const EYE_OFF = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function makeEyeSvg(isOpen) {
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '14'); svg.setAttribute('height', '14');
+    svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2'); svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+    if (isOpen) {
+      const p = document.createElementNS(SVGNS, 'path');
+      p.setAttribute('d', 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z');
+      const c = document.createElementNS(SVGNS, 'circle');
+      c.setAttribute('cx', '12'); c.setAttribute('cy', '12'); c.setAttribute('r', '3');
+      svg.append(p, c);
+    } else {
+      const p = document.createElementNS(SVGNS, 'path');
+      p.setAttribute('d', 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24');
+      const l = document.createElementNS(SVGNS, 'line');
+      l.setAttribute('x1', '1'); l.setAttribute('y1', '1'); l.setAttribute('x2', '23'); l.setAttribute('y2', '23');
+      svg.append(p, l);
+    }
+    return svg;
+  }
 
   document.querySelectorAll('.eye-btn').forEach((btn) => {
-    btn.replaceChildren(svgNode(EYE_ON));
+    btn.replaceChildren(makeEyeSvg(true));
     btn.title = t('btnShowKey');
     btn.setAttribute('aria-label', t('btnShowKey'));
     btn.addEventListener('click', (e) => {
@@ -274,7 +245,7 @@
       if (!input) return;
       const isPwd = input.type === 'password';
       input.type = isPwd ? 'text' : 'password';
-      btn.replaceChildren(svgNode(isPwd ? EYE_OFF : EYE_ON));
+      btn.replaceChildren(makeEyeSvg(!isPwd));
       const label = t(isPwd ? 'btnHideKey' : 'btnShowKey');
       btn.title = label;
       btn.setAttribute('aria-label', label);

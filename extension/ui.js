@@ -20,12 +20,15 @@
     const svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('viewBox', '0 0 36 36');
     svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
-    const r = document.createElementNS(SVGNS, 'rect');
-    for (const [k, v] of Object.entries({ x: 7, y: 10, width: 22, height: 16, rx: 3, fill: 'none', stroke: 'currentColor', 'stroke-width': 2 })) r.setAttribute(k, v);
+    const setAttrs = (elem, attrs) => { for (const [k, v] of Object.entries(attrs)) elem.setAttribute(k, v); };
+    const barTop = document.createElementNS(SVGNS, 'rect');
+    setAttrs(barTop, { x: 9, y: 8, width: 18, height: 4.5, fill: 'currentColor' });
+    const barBot = document.createElementNS(SVGNS, 'rect');
+    setAttrs(barBot, { x: 4, y: 15, width: 28, height: 4.5, fill: 'currentColor' });
     const t = document.createElementNS(SVGNS, 'text');
-    for (const [k, v] of Object.entries({ x: 18, y: 22, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'currentColor', 'font-family': 'Roboto,Arial,sans-serif' })) t.setAttribute(k, v);
+    setAttrs(t, { x: 18, y: 30, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 800, fill: 'currentColor', 'font-family': 'ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace', 'letter-spacing': '0.04em' });
     t.textContent = 'TR';
-    svg.append(r, t);
+    svg.append(barTop, barBot, t);
     refs.btnText = t;
     return svg;
   }
@@ -69,11 +72,11 @@
     b.appendChild(makeIcon());
     b.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (e.shiftKey) quickToggleEnabled(); else togglePanel();
+      if (e.shiftKey) togglePanel(); else quickToggleEnabled();
     });
     b.addEventListener('contextmenu', (e) => {
       e.preventDefault(); e.stopPropagation();
-      quickToggleEnabled();
+      togglePanel();
     });
     return b;
   }
@@ -151,9 +154,7 @@
     for (const node of Object.values(pagesMap)) p.appendChild(node);
 
     p.addEventListener('keydown', onPanelKeyDown);
-    for (const ev of ['click', 'dblclick', 'mousedown', 'mouseup', 'keyup', 'keypress', 'contextmenu', 'wheel', 'pointerdown', 'pointerup']) {
-      p.addEventListener(ev, (e) => e.stopPropagation());
-    }
+    ['click', 'dblclick', 'mousedown', 'mouseup', 'keyup', 'keypress', 'contextmenu', 'wheel', 'pointerdown', 'pointerup'].forEach((ev) => p.addEventListener(ev, (e) => e.stopPropagation()));
     return p;
   }
 

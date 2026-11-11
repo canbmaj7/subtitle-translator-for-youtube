@@ -88,9 +88,11 @@ assert.equal(APP.clampRange(120, 0, 100, 78), 100);
 assert.equal(APP.normalizeColor('yellow'), 'yellow');
 assert.equal(APP.normalizeColor('GREEN'), 'green');
 assert.equal(APP.normalizeColor('cyan'), 'cyan');
+assert.equal(APP.normalizeColor('#ffc53d'), 'yellow');
 assert.equal(APP.normalizeColor('#ffeb3b'), 'yellow');
 assert.equal(APP.normalizeColor('magenta'), 'white');
 assert.equal(APP.normalizeColor(null), 'white');
+assert.equal(APP.colorHex('yellow'), '#ffc53d');
 assert.equal(APP.colorHex('cyan'), '#22d3ee');
 assert.equal(APP.colorHex('invalid'), '#ffffff');
 
@@ -113,7 +115,7 @@ assert.deepEqual(APP.normalizeAppearance({ size: 250, bgOpacity: -5, textColor: 
   bgOpacity: 0,
   bgAlpha: 0,
   textColor: 'yellow',
-  colorCss: '#ffeb3b',
+  colorCss: '#ffc53d',
   origPosition: 'above',
 });
 

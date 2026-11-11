@@ -19,6 +19,7 @@
 - Extension ID: `subtitle-translator@canbmaj7.github.io` (defined in the Firefox manifest; cannot be changed).
 
 ## What changed in 0.6.0 (Release Notes)
+- Context-aware translation: with a Gemini or Groq key, the video title, channel and nearby sentences help the AI pick the right terminology.
 - Redesigned player button: Left-click opens settings panel; right-click or Shift+click quickly toggles translation on/off with toast notification.
 - YouTube gear-style settings menu with sub-pages: Language, Translation engine, Transcript, Appearance, and Advanced.
 - Direct engine selection (Auto, Google Translate, Gemini, Groq) with clear error reporting (no silent fallback when a specific engine fails).

@@ -10,7 +10,7 @@
 2. **Availability:** Public, all markets. **Category:** Productivity (alternative: Entertainment).
 3. **Properties:** Privacy policy URL:
    https://github.com/canbmaj7/subtitle-translator-for-youtube/blob/main/PRIVACY.md
-   The extension executes no remote code and collects no personal data (caption text is sent solely for translation).
+   The extension executes no remote code and collects no personal data (caption text and optional AI video context are sent solely for translation).
 4. **Store listings → English (en-US)** (and optionally Turkish): Copy descriptions from `docs/store/listing.md`.
    - Logo: `docs/store/assets/edge-logo-300.png` (300×300)
    - Screenshots (1280×800): `edge-1-subtitles.png`, `edge-2-panel.png`, `edge-3-german.png`, `edge-4-popup.png`
@@ -20,7 +20,7 @@
 5. **Notes for certification:** Paste the text provided below.
 
 ## Notes for certification
-The extension translates the captions of the YouTube video being watched. It reads caption text on youtube.com and sends it to translate.googleapis.com by default, or to generativelanguage.googleapis.com / api.groq.com only if the user enters their own API key in the popup. No account is needed.
+The extension translates the captions of the YouTube video being watched. It reads caption text on youtube.com and sends it to translate.googleapis.com by default, or to generativelanguage.googleapis.com / api.groq.com only if the user enters their own API key in the popup (where sanitized video title, channel, description snippet, and nearby sentences are included as translation context). No account is needed.
 
 To test:
 1. Open any YouTube video with English captions (e.g. https://www.youtube.com/watch?v=x7X9w_GIm1s).
@@ -32,6 +32,7 @@ To test:
 The extension stores preferences in `chrome.storage.sync` and API keys in `chrome.storage.local`; it operates without external servers or analytics. Source: https://github.com/canbmaj7/subtitle-translator-for-youtube
 
 ## What changed in 0.6.0 (Release Notes)
+- Context-aware translation: with a Gemini or Groq key, the video title, channel and nearby sentences help the AI pick the right terminology.
 - Redesigned player button: Left-click opens the settings panel; right-click or Shift+click quickly toggles translation on/off with toast notification.
 - YouTube gear-style settings menu with sub-pages: Language, Translation engine, Transcript, Appearance, and Advanced.
 - Direct engine selection (Auto, Google Translate, Gemini, Groq) with clear error reporting (no silent fallback when a specific engine fails).

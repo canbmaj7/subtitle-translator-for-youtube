@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "btnTitle": {
-    "message": "$LANG$ çevirisi — Sol tık: ayarlar · Sağ tık / Shift+tık: hızlı aç/kapa",
+    "message": "$LANG$ çevirisi — Tıkla: çeviriyi aç/kapa · Sağ tık: ayarlar",
     "description": "Tooltip for player button",
     "placeholders": {
       "lang": {
@@ -17,7 +17,7 @@
     }
   },
   "btnAriaLabel": {
-    "message": "$LANG$ çeviri",
+    "message": "$LANG$ çevirisi — Tıkla: çeviriyi aç/kapa · Sağ tık: ayarlar",
     "description": "Aria label for player button",
     "placeholders": {
       "lang": {
