@@ -8,7 +8,7 @@ try {
   const T = require(ext('transcript.js'));
 
   let passed = 0;
-  const total = 11;
+  const total = 12;
 
   // 1) clock: oynatıcı zaman biçimi ve saat geçişi (3599999 / 3600000 ms)
   assert.equal(T.clock(-500), '0:00');
@@ -162,6 +162,14 @@ try {
   assert.equal(T.fileName('   ', 'en', 'txt'), 'subtitles-video.en.txt');
   assert.equal(T.fileName('vid:123/foo bar', 'pt-BR', '.srt'), 'subtitles-vid_123_foo_bar.pt-BR.srt');
   assert.equal(T.fileName('abc', 'zh_CN', 'srt'), 'subtitles-abc.zh_CN.srt');
+  passed++;
+
+  // 12) safeFileName: video başlığından güvenli dosya adı türetimi
+  assert.equal(T.safeFileName('How Linux Works - YouTube', 'tr', 'srt'), 'How_Linux_Works.tr.srt');
+  assert.equal(T.safeFileName('C++: A/B*Test? "2026" <Live>|#1', 'en', '.txt'), 'C++_A_B_Test_2026_Live_#1.en.txt');
+  assert.equal(T.safeFileName('   ', 'tr', 'srt'), 'subtitles.tr.srt');
+  assert.equal(T.safeFileName(null, 'en', 'txt'), 'subtitles.en.txt');
+  assert.equal(T.safeFileName('A'.repeat(120), 'tr', 'srt'), 'A'.repeat(80) + '.tr.srt');
   passed++;
 
   console.log(`${passed}/${total} transkript testi geçti`);

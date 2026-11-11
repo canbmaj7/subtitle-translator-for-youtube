@@ -34,8 +34,11 @@
       "js": [
         "languages.js",
         "sentences.js",
+        "transcript.js",
         "scheduler.js",
         "wait.js",
+        "ui-appearance.js",
+        "ui-transcript.js",
         "ui-pages.js",
         "ui.js",
         "content.js"

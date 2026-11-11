@@ -187,12 +187,12 @@
     pEng.append(makeBackHeader(ns.t('navEngine'), () => showPage('main')), engItems.auto, engItems.google, engItems.gemini, engItems.groq, keyInfoBox, issueBox);
     pages.engine = pEng;
 
-    // Transkript ve Görünüm (2B yer tutucular)
-    for (const [id, titleKey] of [['transcript', 'navTranscript'], ['appearance', 'navAppearance']]) {
-      const pg = el('div', 'ytr-page'); pg.hidden = true;
-      pg.append(makeBackHeader(ns.t(titleKey), () => showPage('main')), el('div', 'ytr-placeholder', ns.t('comingSoon')));
-      pages[id] = pg;
-    }
+    // Transkript ve Görünüm alt sayfaları
+    const subCtx = { ...ctx, makeBackHeader };
+    const transSub = ns.pages && ns.pages.transcript ? ns.pages.transcript.build(subCtx) : { page: el('div', 'ytr-page') };
+    const appSub = ns.pages && ns.pages.appearance ? ns.pages.appearance.build(subCtx) : { page: el('div', 'ytr-page') };
+    pages.transcript = transSub.page;
+    pages.appearance = appSub.page;
 
     // Gelişmiş Sayfası
     const pAdv = el('div', 'ytr-page'); pAdv.hidden = true;
@@ -222,8 +222,13 @@
       chkWait.setChecked(!!s.waitForTranslation);
       navLang.val.textContent = getTargetName(target);
       navEng.val.textContent = ns.t(engineLabelKey(enginePref));
-      navTrans.val.textContent = ns.t('comingSoon');
-      navApp.val.textContent = ns.t('comingSoon');
+      const trData = (ns.getTranscript && ns.getTranscript()) || {};
+      const trCount = Array.isArray(trData.sentences) ? trData.sentences.length : 0;
+      navTrans.val.textContent = trCount > 0 ? String(trCount) : '';
+      const app = ns.normalizeAppearance ? ns.normalizeAppearance(s) : { size: s.size || 100 };
+      navApp.val.textContent = app.size + '%';
+      if (transSub.refresh) transSub.refresh();
+      if (appSub.refresh) appSub.refresh();
 
       for (const [code, item] of Object.entries(langItems)) {
         const active = code === target;
@@ -246,13 +251,17 @@
       issueBox.textContent = issue ? (issue.engine ? issue.engine + ': ' : '') + ns.t(issue.msgKey) : '';
     }
 
-    return { pages, refreshPages };
+    function onPageActive(pageId, isOpen) {
+      if (transSub.setActive) transSub.setActive(Boolean(isOpen && pageId === 'transcript'));
+    }
+
+    return { pages, refreshPages, onPageActive };
   }
 
   ns.issueMessageKey = issueMessageKey;
   ns.keyBadgeInfo = keyBadgeInfo;
   ns.findRelevantIssue = findRelevantIssue;
   ns.engineLabelKey = engineLabelKey;
-  ns.pages = { build, issueMessageKey, keyBadgeInfo, findRelevantIssue, engineLabelKey };
+  ns.pages = Object.assign(ns.pages || {}, { build, issueMessageKey, keyBadgeInfo, findRelevantIssue, engineLabelKey });
   if (typeof module !== 'undefined') module.exports = ns.pages;
 })();

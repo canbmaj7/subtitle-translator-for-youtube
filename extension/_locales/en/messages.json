@@ -219,9 +219,69 @@
     "message": "Advanced",
     "description": "Advanced subpage row"
   },
-  "comingSoon": {
-    "message": "Coming soon",
-    "description": "Placeholder text for upcoming features"
+  "rowBgOpacity": {
+    "message": "Background opacity",
+    "description": "Label for background opacity slider"
+  },
+  "rowTextColor": {
+    "message": "Text color",
+    "description": "Label for subtitle text color presets"
+  },
+  "colorWhite": {
+    "message": "White",
+    "description": "White subtitle color preset"
+  },
+  "colorYellow": {
+    "message": "Yellow",
+    "description": "Yellow subtitle color preset"
+  },
+  "colorGreen": {
+    "message": "Green",
+    "description": "Green subtitle color preset"
+  },
+  "colorCyan": {
+    "message": "Cyan",
+    "description": "Cyan subtitle color preset"
+  },
+  "rowOrigPosition": {
+    "message": "Original line position",
+    "description": "Label for original subtitle position"
+  },
+  "origPosAbove": {
+    "message": "Above translation",
+    "description": "Original line above translation"
+  },
+  "origPosBelow": {
+    "message": "Below translation",
+    "description": "Original line below translation"
+  },
+  "searchPlaceholder": {
+    "message": "Search subtitles…",
+    "description": "Placeholder for transcript search input"
+  },
+  "transcriptEmpty": {
+    "message": "No subtitles loaded yet.",
+    "description": "Shown when transcript has no sentences"
+  },
+  "transcriptNoMatch": {
+    "message": "No matching lines found.",
+    "description": "Shown when transcript search returns no results"
+  },
+  "btnCopy": {
+    "message": "Copy",
+    "description": "Copy transcript button"
+  },
+  "msgCopied": {
+    "message": "Copied",
+    "description": "Feedback after copying transcript"
+  },
+  "btnDownloadSrt": {
+    "message": "Download .srt",
+    "description": "Download SRT subtitle button"
+  },
+  "btnDownloadTxt": {
+    "message": "Download .txt",
+    "description": "Download TXT subtitle button"
   },
   "engineAuto": {
     "message": "Automatic",

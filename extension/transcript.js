@@ -149,6 +149,21 @@
     return `subtitles-${vid}.${clean(lang)}.${(ext || '').replace(/^\./, '')}`;
   }
 
+  // Video başlığından güvenli indirme dosya adı türetir
+  function safeFileName(title, lang, ext) {
+    const raw = String(title || '').replace(/\s*-\s*YouTube\s*$/i, '').trim();
+    const base = raw
+      .replace(/[<>:"/\\|?*\x00-\x1f]+/g, ' ')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^[._-]+|[._-]+$/g, '')
+      .slice(0, 80)
+      .replace(/[._-]+$/g, '') || 'subtitles';
+    const cleanLang = String(lang || '').trim().replace(/[^A-Za-z0-9_-]/g, '_');
+    const cleanExt = String(ext || 'txt').trim().replace(/^\.+/, '').replace(/[^A-Za-z0-9]/g, '') || 'txt';
+    return cleanLang ? `${base}.${cleanLang}.${cleanExt}` : `${base}.${cleanExt}`;
+  }
+
   ns.transcript = {
     clock,
     srtTime,
@@ -161,6 +176,7 @@
     activeIndex,
     windowRange,
     fileName,
+    safeFileName,
   };
   Object.assign(ns, ns.transcript);
 

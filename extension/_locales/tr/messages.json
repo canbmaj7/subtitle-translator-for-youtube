@@ -219,9 +219,69 @@
     "message": "Gelişmiş",
     "description": "Advanced subpage row"
   },
-  "comingSoon": {
-    "message": "Yakında",
-    "description": "Placeholder text for upcoming features"
+  "rowBgOpacity": {
+    "message": "Arka plan saydamlığı",
+    "description": "Label for background opacity slider"
+  },
+  "rowTextColor": {
+    "message": "Yazı rengi",
+    "description": "Label for subtitle text color presets"
+  },
+  "colorWhite": {
+    "message": "Beyaz",
+    "description": "White subtitle color preset"
+  },
+  "colorYellow": {
+    "message": "Sarı",
+    "description": "Yellow subtitle color preset"
+  },
+  "colorGreen": {
+    "message": "Yeşil",
+    "description": "Green subtitle color preset"
+  },
+  "colorCyan": {
+    "message": "Camgöbeği",
+    "description": "Cyan subtitle color preset"
+  },
+  "rowOrigPosition": {
+    "message": "Orijinal satır konumu",
+    "description": "Label for original subtitle position"
+  },
+  "origPosAbove": {
+    "message": "Çevirinin üstünde",
+    "description": "Original line above translation"
+  },
+  "origPosBelow": {
+    "message": "Çevirinin altında",
+    "description": "Original line below translation"
+  },
+  "searchPlaceholder": {
+    "message": "Altyazılarda ara…",
+    "description": "Placeholder for transcript search input"
+  },
+  "transcriptEmpty": {
+    "message": "Henüz altyazı yüklenmedi.",
+    "description": "Shown when transcript has no sentences"
+  },
+  "transcriptNoMatch": {
+    "message": "Eşleşen satır bulunamadı.",
+    "description": "Shown when transcript search returns no results"
+  },
+  "btnCopy": {
+    "message": "Kopyala",
+    "description": "Copy transcript button"
+  },
+  "msgCopied": {
+    "message": "Kopyalandı",
+    "description": "Feedback after copying transcript"
+  },
+  "btnDownloadSrt": {
+    "message": ".srt indir",
+    "description": "Download SRT subtitle button"
+  },
+  "btnDownloadTxt": {
+    "message": ".txt indir",
+    "description": "Download TXT subtitle button"
   },
   "engineAuto": {
     "message": "Otomatik",

@@ -4,7 +4,7 @@
   const SVGNS = 'http://www.w3.org/2000/svg';
   let getSettings = () => ({}), setSetting = () => {};
   let btn = null, panel = null, toast = null, toastTimer = 0;
-  let pagesMap = {}, refreshPagesFn = null, currentPage = 'main';
+  let pagesMap = {}, refreshPagesFn = null, onPageActiveFn = null, currentPage = 'main';
   const refs = {};
   const localState = { keyStatus: {}, lastIssues: [], engine: '' };
   let syncEngine = '';
@@ -80,13 +80,14 @@
 
   function getActiveMenuItems() {
     const pg = pagesMap[currentPage];
-    return pg ? Array.from(pg.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]')) : [];
+    return pg ? Array.from(pg.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="slider"]')).filter((n) => !n.hidden && !n.disabled) : [];
   }
 
   function showPage(pageId) {
     const prev = currentPage;
     currentPage = pagesMap[pageId] ? pageId : 'main';
     for (const [k, node] of Object.entries(pagesMap)) node.hidden = (k !== currentPage);
+    if (onPageActiveFn) onPageActiveFn(currentPage, Boolean(panel && !panel.hidden));
     if (!panel || panel.hidden) return;
     const items = getActiveMenuItems();
     if (!items.length) return;
@@ -146,6 +147,7 @@
     });
     pagesMap = built.pages;
     refreshPagesFn = built.refreshPages;
+    onPageActiveFn = built.onPageActive || null;
     for (const node of Object.values(pagesMap)) p.appendChild(node);
 
     p.addEventListener('keydown', onPanelKeyDown);
@@ -161,6 +163,7 @@
     panel.hidden = !willOpen;
     if (btn) btn.setAttribute('aria-expanded', String(willOpen));
     if (willOpen) { showPage('main'); refresh(); }
+    else if (onPageActiveFn) onPageActiveFn(currentPage, false);
   }
 
   function ensure() {

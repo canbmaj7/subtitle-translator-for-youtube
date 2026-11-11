@@ -7,7 +7,7 @@
   const state = { gen: 0, videoId: null, key: null, rawUrl: null, events: null, sl: null, sentences: [], cues: [], idx: 0, raf: 0, ensureTimer: 0, engine: '', progress: null };
   let lastShown = null;
   let settingsLoaded = false, pendingTimedText = null;
-  let settings = { enabled: true, showOriginal: false, size: 100, target: YTR.defaultTarget(), waitForTranslation: false };
+  let settings = { enabled: true, showOriginal: false, size: 100, bgOpacity: 78, textColor: 'white', origPosition: 'below', target: YTR.defaultTarget(), waitForTranslation: false };
   let scheduler = null;
   const waitCtrl = YTR.createWaitController ? YTR.createWaitController({
     getVideo: () => document.querySelector('#movie_player video'),
@@ -15,9 +15,12 @@
     getProgress: () => state.progress,
   }) : null;
 
-  YTR.retryFailed = () => {
-    if (scheduler) scheduler.retryFailed();
+  const getVideoTitle = () => {
+    const n = document.querySelector('#movie_player .ytp-title-link, h1.ytd-watch-metadata yt-formatted-string');
+    return (n && n.textContent && n.textContent.trim()) || document.title.replace(/\s*-\s*YouTube\s*$/i, '').trim() || state.videoId || 'video';
   };
+  YTR.getTranscript = () => ({ sentences: state.sentences, sl: state.sl, title: getVideoTitle() });
+  YTR.retryFailed = () => { if (scheduler) scheduler.retryFailed(); };
 
   const applySettings = () => {
     if (!settings.enabled) deactivate();
@@ -105,6 +108,8 @@
     if (waitCtrl) waitCtrl.reset();
     state.gen++; state.videoId = videoId; state.key = key; state.sentences = []; state.cues = []; state.idx = 0; state.progress = null;
     if (YTR.setProgress) YTR.setProgress(null);
+    if (YTR.onTranscriptUpdate) YTR.onTranscriptUpdate();
+    if (YTR.refreshUI) YTR.refreshUI();
     deactivate();
   }
 
@@ -147,6 +152,8 @@
     rebuild();
     log(sentences.length, 'cümle,', state.cues.length, 'parça, dil:', state.sl, '->', target);
     activate();
+    if (YTR.onTranscriptUpdate) YTR.onTranscriptUpdate();
+    if (YTR.refreshUI) YTR.refreshUI();
 
     if (YTR.createScheduler) {
       scheduler = YTR.createScheduler({
@@ -161,6 +168,7 @@
           if (res && res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); }
           rebuild();
           if (waitCtrl) waitCtrl.onChunkDone();
+          if (YTR.onTranscriptUpdate) YTR.onTranscriptUpdate();
         },
         onProgress: (p) => { state.progress = p; if (YTR.setProgress) YTR.setProgress(p); },
       });
@@ -218,8 +226,11 @@
     const targetDir = rtl ? 'rtl' : 'ltr';
     if (el.dir !== targetDir) el.dir = targetDir;
 
-    const fs = Math.max(13, Math.round(el.parentElement.clientWidth * 0.023 * (settings.size / 100)));
+    const app = YTR.normalizeAppearance ? YTR.normalizeAppearance(settings) : { size: settings.size || 100, bgAlpha: 0.78, colorCss: '#ffffff', origPosition: 'below' };
+    const fs = Math.max(13, Math.round(el.parentElement.clientWidth * 0.023 * (app.size / 100)));
     if (el.dataset.fs !== String(fs)) { el.dataset.fs = fs; el.style.fontSize = fs + 'px'; }
+    el.style.setProperty('--ytr-bg-alpha', String(app.bgAlpha));
+    el.style.setProperty('--ytr-color', app.colorCss);
     const t = video.currentTime * 1000;
     const cues = state.cues;
     if (state.idx >= cues.length || (cues[state.idx] && cues[state.idx].s > t + 5000)) state.idx = 0;
@@ -229,7 +240,7 @@
 
     const waitStatus = waitCtrl && waitCtrl.check(cue);
     if (waitStatus && waitStatus.waiting) {
-      const sig = 'waiting|' + (cue ? cue.s : 0) + '|' + settings.size;
+      const sig = 'waiting|' + (cue ? cue.s : 0) + '|' + app.size + '|' + app.bgAlpha + '|' + app.colorCss;
       if (sig === lastShown) return;
       lastShown = sig;
       el.replaceChildren();
@@ -240,7 +251,7 @@
       return;
     }
 
-    const sig = cue ? cue.s + '|' + (cue.tr ? cue.tr.length : 0) + '|' + settings.showOriginal + '|' + settings.size + '|' + settings.target : null;
+    const sig = cue ? `${cue.s}|${cue.tr ? cue.tr.length : 0}|${settings.showOriginal}|${app.size}|${app.bgAlpha}|${app.colorCss}|${app.origPosition}|${settings.target}` : null;
     if (sig === lastShown) return;
     lastShown = sig;
     el.replaceChildren();
@@ -248,12 +259,14 @@
     const line = document.createElement('div');
     line.className = 'ytr-line' + (cue.tr ? '' : ' ytr-pending');
     line.textContent = cue.tr || cue.t;
-    el.appendChild(line);
     if (settings.showOriginal && cue.tr) {
       const o = document.createElement('div');
       o.className = 'ytr-line ytr-orig';
       o.textContent = cue.t;
-      el.appendChild(o);
+      if (app.origPosition === 'above') el.append(o, line);
+      else el.append(line, o);
+    } else {
+      el.appendChild(line);
     }
   }
 
