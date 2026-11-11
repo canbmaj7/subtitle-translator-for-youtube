@@ -1,6 +1,6 @@
 # Firefox Add-ons (AMO) — Submission Guide
 
-**Status (2026-11-11):** v0.5.1 approved and live on [Firefox Add-ons (AMO)](https://addons.mozilla.org/addon/subtitle-translator-youtube/).
+**Status (2026-11-11):** v0.6.0 approved and live on [Firefox Add-ons (AMO)](https://addons.mozilla.org/addon/subtitle-translator-youtube/).
 
 - Account: https://addons.mozilla.org/developers/ (free, requires a Firefox account)
 - Package: `node scripts/build-firefox.cjs` → `dist/subtitle-translator-<version>-firefox.zip` (Firefox 140+)

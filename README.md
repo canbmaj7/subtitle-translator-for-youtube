@@ -54,8 +54,8 @@ Translates YouTube captions into your preferred language and overlays them seaml
 
 | Store | Status | Link |
 |---|---|---|
-| **Firefox Add-ons (AMO)** | **Live** (v0.5.1) | [Install from Mozilla Add-ons](https://addons.mozilla.org/addon/subtitle-translator-youtube/) |
-| **Microsoft Edge Add-ons** | **Live** (v0.5.1) | [Install from Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/ohhflleelfaobkbkajkcbdofhmonokfh) |
+| **Firefox Add-ons (AMO)** | **Live** (v0.6.0) | [Install from Mozilla Add-ons](https://addons.mozilla.org/addon/subtitle-translator-youtube/) |
+| **Microsoft Edge Add-ons** | **Live** (v0.5.1), v0.6.0 in review | [Install from Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/ohhflleelfaobkbkajkcbdofhmonokfh) |
 | **Chrome Web Store** | Not yet available | Pending registration ($5 fee) |
 
 *Store installations update automatically. Note: v0.6.0 will become available on the stores after the standard store review process.*

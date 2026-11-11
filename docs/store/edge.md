@@ -1,6 +1,6 @@
 # Microsoft Edge Add-ons — Submission Guide
 
-**Status (2026-11-11):** v0.5.1 is live on [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/ohhflleelfaobkbkajkcbdofhmonokfh).
+**Status (2026-11-11):** v0.6.0 submitted and in review (v0.5.1 still live) on [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/ohhflleelfaobkbkajkcbdofhmonokfh).
 
 - Account: https://partner.microsoft.com/dashboard/microsoftedge (free registration for the Edge Developer Program using a Microsoft account)
 - Package: `bash scripts/package.sh` → `dist/subtitle-translator-<version>.zip` (same package as Chrome; Edge accepts the MV3 manifest directly)

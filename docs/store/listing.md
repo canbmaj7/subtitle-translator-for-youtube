@@ -1,6 +1,6 @@
 # Store Listing (Chrome Web Store / Edge Add-ons / Firefox AMO)
 
-**Status (2026-11-11):** Edge 0.5.1 live, Firefox 0.5.1 approved.
+**Status (2026-11-11):** Firefox 0.6.0 approved and live; Edge 0.6.0 submitted (in review, 0.5.1 still live).
 
 ## Name
 - en: Subtitle Translator for YouTube
