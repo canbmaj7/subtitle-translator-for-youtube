@@ -13,7 +13,7 @@
    The extension executes no remote code and collects no personal data (caption text and optional AI video context are sent solely for translation).
 4. **Store listings → English (en-US)** (and optionally Turkish): Copy descriptions from `docs/store/listing.md`.
    - Logo: `docs/store/assets/edge-logo-300.png` (300×300)
-   - Screenshots (1280×800): `edge-1-subtitles.png`, `edge-2-panel.png`, `edge-3-german.png`, `edge-4-popup.png`
+   - Screenshots (1280×800): `edge-1-subtitles.png`, `edge-2-panel.png`, `edge-3-transcript.png`, `edge-4-popup.png`
    - Small promo tile (440×280): `edge-promo-440x280.png`
    - Search keywords (up to 7): `youtube, subtitles, captions, translate, translator, multilingual, gemini`
    - Support / Website: https://github.com/canbmaj7/subtitle-translator-for-youtube
