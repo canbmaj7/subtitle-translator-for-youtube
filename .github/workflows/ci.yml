@@ -25,6 +25,7 @@ jobs:
           node tests/ui.test.cjs
           node tests/scheduler.test.cjs
           node tests/cache.test.cjs
+          node tests/channel.test.cjs
 
       - name: Run store checks
         run: node scripts/check-store.cjs

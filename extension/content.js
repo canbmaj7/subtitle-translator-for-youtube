@@ -8,6 +8,9 @@
   let lastShown = null;
   let settingsLoaded = false, pendingTimedText = null;
   let settings = { enabled: true, showOriginal: false, size: 100, bgOpacity: 78, textColor: 'white', origPosition: 'below', target: YTR.defaultTarget(), waitForTranslation: false };
+  let glossaryVariant = '';
+  let channelLang = {};
+  let currentTarget = null;
   let scheduler = null;
   const waitCtrl = YTR.createWaitController ? YTR.createWaitController({
     getVideo: () => document.querySelector('#movie_player video'),
@@ -20,6 +23,27 @@
   YTR.getTranscript = () => ({ sentences: state.sentences, sl: state.sl, title: getVideoTitle() });
   YTR.retryFailed = () => { if (scheduler) scheduler.retryFailed(); };
 
+  function getChannelKey() {
+    try {
+      const meta = getVideoMeta();
+      const name = (meta && meta.channel) || '';
+      return (name && YTR.channel && YTR.channel.keyOf) ? YTR.channel.keyOf(name) : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function resolveTarget() {
+    const key = getChannelKey();
+    if (key && YTR.channel && YTR.channel.pick) {
+      try {
+        const picked = YTR.channel.pick(channelLang, key);
+        if (picked) return picked;
+      } catch (_) {}
+    }
+    return settings.target || (YTR.defaultTarget ? YTR.defaultTarget() : 'tr');
+  }
+
   const applySettings = () => {
     if (!settings.enabled) deactivate();
     else if (state.cues.length) activate();
@@ -28,31 +52,72 @@
   };
 
   // Ayarlar yüklenene kadar çeviri başlamaz
-  chrome.storage.sync.get(settings, (s) => {
-    settings = { ...settings, ...s };
-    settingsLoaded = true;
-    applySettings();
-    if (pendingTimedText) {
-      const { url, body } = pendingTimedText;
-      pendingTimedText = null;
-      onTimedText(url, body);
-    }
-  });
+  try {
+    chrome.storage.sync.get({ ...settings, glossary: null }, (s) => {
+      if (chrome.runtime && chrome.runtime.lastError) return;
+      if (s) {
+        if ('glossary' in s) {
+          try {
+            glossaryVariant = (YTR.cache && YTR.cache.variantOf) ? YTR.cache.variantOf(s.glossary) : '';
+          } catch (_) {}
+          delete s.glossary;
+        }
+        settings = { ...settings, ...s };
+      }
+      settingsLoaded = true;
+      applySettings();
+      if (pendingTimedText) {
+        const { url, body } = pendingTimedText;
+        pendingTimedText = null;
+        onTimedText(url, body);
+      }
+    });
+  } catch (_) {}
 
-  chrome.storage.onChanged.addListener((ch, area) => {
-    if (area === 'local') {
-      if (ch.lastEngine || ch.lastError) YTR.setStatus && YTR.setStatus(ch.lastEngine ? ch.lastEngine.newValue : null, ch.lastError ? ch.lastError.newValue : '');
-      return;
-    }
-    let targetChanged = false;
-    for (const k in ch) {
-      if (k === 'target' && ch[k].newValue !== settings.target) targetChanged = true;
-      settings[k] = ch[k].newValue;
-    }
-    if (targetChanged) onTargetChanged();
-    else applySettings();
-  });
-  chrome.storage.local.get({ lastEngine: '', lastError: '' }, (s) => YTR.setStatus && YTR.setStatus(s.lastEngine, s.lastError));
+  try {
+    chrome.storage.onChanged.addListener((ch, area) => {
+      try {
+        if (area === 'local') {
+          if (ch.channelLang) {
+            channelLang = (ch.channelLang.newValue && typeof ch.channelLang.newValue === 'object') ? ch.channelLang.newValue : {};
+          }
+          if (ch.lastEngine || ch.lastError) {
+            if (YTR.setStatus) YTR.setStatus(ch.lastEngine ? ch.lastEngine.newValue : null, ch.lastError ? ch.lastError.newValue : '');
+          }
+          return;
+        }
+        if (ch.glossary) {
+          try {
+            glossaryVariant = (YTR.cache && YTR.cache.variantOf) ? YTR.cache.variantOf(ch.glossary.newValue) : '';
+          } catch (_) {
+            glossaryVariant = '';
+          }
+        }
+        let targetChanged = false;
+        let newTarget = null;
+        for (const k in ch) {
+          if (k === 'glossary') continue;
+          if (k === 'target' && ch[k].newValue !== settings.target) {
+            targetChanged = true;
+            newTarget = ch[k].newValue;
+          }
+          settings[k] = ch[k].newValue;
+        }
+        if (targetChanged) onTargetChanged(newTarget);
+        else applySettings();
+      } catch (_) {}
+    });
+  } catch (_) {}
+
+  try {
+    chrome.storage.local.get({ lastEngine: '', lastError: '', channelLang: {} }, (s) => {
+      if (chrome.runtime && chrome.runtime.lastError) return;
+      if (s) {
+        if (s.channelLang && typeof s.channelLang === 'object') channelLang = s.channelLang;
+        if (YTR.setStatus) YTR.setStatus(s.lastEngine, s.lastError);
+      }
+    });
+  } catch (_) {}
 
   // ---- Altyazı adresi yakalama ----
   YTR.initUI(() => settings, (k, v) => chrome.storage.sync.set({ [k]: v }));
@@ -74,7 +139,8 @@
     if (!v) return;
 
     state.rawUrl = rawUrl;
-    const target = settings.target || YTR.defaultTarget();
+    currentTarget = resolveTarget();
+    const target = currentTarget;
     const targetBase = baseLang(target);
     const srcBase = baseLang(lang);
     const tlangBase = tlang ? baseLang(tlang) : null;
@@ -106,6 +172,7 @@
     if (waitCtrl) waitCtrl.reset();
     if (state.videoId !== videoId) state.summary = null;
     state.gen++; state.videoId = videoId; state.key = key; state.sentences = []; state.cues = []; state.idx = 0; state.progress = null;
+    currentTarget = resolveTarget();
     if (YTR.setProgress) YTR.setProgress(null);
     if (YTR.onTranscriptUpdate) YTR.onTranscriptUpdate();
     if (YTR.refreshUI) YTR.refreshUI();
@@ -161,7 +228,8 @@
     if (scheduler) { scheduler.stop(); scheduler = null; }
     if (waitCtrl) waitCtrl.reset();
     if (!state.events || !state.sl || !settings.enabled) return;
-    const target = settings.target || YTR.defaultTarget();
+    currentTarget = resolveTarget();
+    const target = currentTarget;
     const targetBase = baseLang(target);
     const srcBase = baseLang(state.sl);
 
@@ -215,7 +283,7 @@
             }
             return { ok: false, error: msg };
           }
-        }, () => ({ sl: state.sl, tl: target })),
+        }, () => ({ sl: state.sl, tl: target, variant: glossaryVariant })),
         onChunkDone: (_chunk, res) => {
           if (res && res.engine && res.engine !== state.engine) { state.engine = res.engine; log('çeviri motoru:', res.engine); }
           rebuild();
@@ -227,7 +295,17 @@
     }
   }
 
-  function onTargetChanged() {
+  function onTargetChanged(newTarget) {
+    const target = newTarget || settings.target || (YTR.defaultTarget ? YTR.defaultTarget() : 'tr');
+    const key = getChannelKey();
+    if (key && target && YTR.channel && YTR.channel.put) {
+      try {
+        channelLang = YTR.channel.put(channelLang, key, target);
+        const p = chrome.storage.local.set({ channelLang });
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch (_) {}
+    }
+    currentTarget = target;
     if (scheduler) { scheduler.stop(); scheduler = null; }
     if (waitCtrl) waitCtrl.reset();
     if (YTR.refreshUI) YTR.refreshUI();
@@ -238,7 +316,8 @@
 
   // ---- Çeviri ve Zamanlama ----
   function rebuild() {
-    const isCjk = YTR.isCjk ? YTR.isCjk(settings.target) : /^(zh|ja|ko|th)/.test(settings.target);
+    const curTarget = currentTarget || settings.target;
+    const isCjk = YTR.isCjk ? YTR.isCjk(curTarget) : /^(zh|ja|ko|th)/.test(curTarget);
     state.cues = YTR.toCues(state.sentences, isCjk ? 30 : 70);
     state.idx = 0;
   }
@@ -248,7 +327,8 @@
     if (!player) return null;
     let el = document.getElementById('ytr-overlay');
     if (!el) { el = document.createElement('div'); el.id = 'ytr-overlay'; }
-    const rtl = YTR.isRtl ? YTR.isRtl(settings.target) : /^(ar|he|fa|ur)/.test(settings.target);
+    const curTarget = currentTarget || settings.target;
+    const rtl = YTR.isRtl ? YTR.isRtl(curTarget) : /^(ar|he|fa|ur)/.test(curTarget);
     el.dir = rtl ? 'rtl' : 'ltr';
     if (el.parentElement !== player) player.appendChild(el);
     return el;
@@ -274,7 +354,8 @@
     const el = overlay();
     if (!video || !el) return;
 
-    const rtl = YTR.isRtl ? YTR.isRtl(settings.target) : /^(ar|he|fa|ur)/.test(settings.target);
+    const curTarget = currentTarget || settings.target;
+    const rtl = YTR.isRtl ? YTR.isRtl(curTarget) : /^(ar|he|fa|ur)/.test(curTarget);
     const targetDir = rtl ? 'rtl' : 'ltr';
     if (el.dir !== targetDir) el.dir = targetDir;
 
@@ -303,7 +384,7 @@
       return;
     }
 
-    const sig = cue ? `${cue.s}|${cue.tr ? cue.tr.length : 0}|${settings.showOriginal}|${app.size}|${app.bgAlpha}|${app.colorCss}|${app.origPosition}|${settings.target}` : null;
+    const sig = cue ? `${cue.s}|${cue.tr ? cue.tr.length : 0}|${settings.showOriginal}|${app.size}|${app.bgAlpha}|${app.colorCss}|${app.origPosition}|${curTarget}` : null;
     if (sig === lastShown) return;
     lastShown = sig;
     el.replaceChildren();

@@ -3,7 +3,7 @@ const assert = require('assert');
 const path = require('path');
 
 globalThis.YTR = {};
-const { createCache, keyFor, usable, wantsAI, withCache, VERSION } = require(path.join(__dirname, '../extension/cache.js'));
+const { createCache, keyFor, usable, wantsAI, withCache, variantOf, VERSION } = require(path.join(__dirname, '../extension/cache.js'));
 
 // chrome.storage.local benzeri bellek içi depo
 function fakeStore() {
@@ -29,7 +29,7 @@ function fakeStore() {
 
 (async () => {
   let passed = 0;
-  const total = 12;
+  const total = 13;
   const L = ['Hello world', 'How are you'];
 
   // 1) Yaz-oku gidiş dönüş ve VERSION 2
@@ -220,6 +220,73 @@ function fakeStore() {
     assert.equal(wantsAI('google', { custom: { state: 'valid' } }), false);
     assert.equal(wantsAI('auto', { custom: { state: 'valid' }, gemini: { state: 'invalid' }, groq: { state: 'invalid' } }), true);
     assert.equal(wantsAI('auto', { custom: { state: 'invalid' }, gemini: { state: 'invalid' }, groq: { state: 'invalid' } }), false);
+    passed++;
+  }
+
+  // 13) variantOf: boşsa '', değilse kararlı kısa hash, sıra duyarlı
+  {
+    assert.equal(variantOf(), '');
+    assert.equal(variantOf(null), '');
+    assert.equal(variantOf(undefined), '');
+    assert.equal(variantOf(''), '');
+    assert.equal(variantOf('   '), '');
+    assert.equal(variantOf([]), '');
+    assert.equal(variantOf([{}]), '');
+    assert.equal(variantOf([{ src: '' }]), '');
+    assert.equal(variantOf([{ src: '  ', dst: '  ' }]), '');
+
+    const list1 = [
+      { src: 'API', dst: 'Arayüz' },
+      { src: 'Docker' },
+    ];
+    const list1Clone = [
+      { src: 'API', dst: 'Arayüz' },
+      { src: 'Docker' },
+    ];
+    const v1 = variantOf(list1);
+    const v1Clone = variantOf(list1Clone);
+    assert.ok(typeof v1 === 'string' && v1.length > 0, 'variant boş olmamalı');
+    assert.equal(v1, v1Clone, 'aynı girdi aynı variant üretmeli');
+
+    // Sıra değişince farklı olmalı (sıra duyarlı)
+    const listReordered = [
+      { src: 'Docker' },
+      { src: 'API', dst: 'Arayüz' },
+    ];
+    assert.notEqual(variantOf(listReordered), v1, 'sıra değişince variant farklı olmalı');
+
+    // İçerik değişince farklı olmalı
+    const listModified = [
+      { src: 'API', dst: 'Farklı' },
+      { src: 'Docker' },
+    ];
+    assert.notEqual(variantOf(listModified), v1, 'içerik değişince variant farklı olmalı');
+
+    // Dize ve nesne girdisi desteği
+    assert.equal(variantOf('term => ceviri'), variantOf('term => ceviri'));
+    assert.notEqual(variantOf('a'), variantOf('b'));
+
+    // withCache getLangs { sl, tl, variant } entegrasyonu
+    const localStore = fakeStore();
+    const syncStore = fakeStore();
+    globalThis.chrome = { storage: { local: localStore, sync: syncStore } };
+    let calls = 0;
+    let gloss = list1;
+    const wrapped = withCache(async (lines) => {
+      calls++;
+      return { ok: true, res: lines.map((x) => 'T:' + x), engine: 'Gemini' };
+    }, () => ({ sl: 'en', tl: 'tr', variant: variantOf(gloss) }));
+
+    await wrapped(['test']);
+    assert.equal(calls, 1);
+    const rCached = await wrapped(['test']);
+    assert.equal(rCached.cached, true);
+    assert.equal(calls, 1);
+
+    gloss = listReordered;
+    const rNew = await wrapped(['test']);
+    assert.equal(rNew.cached, undefined);
+    assert.equal(calls, 2, 'variant değiştiğinde önbellek isabet etmemeli');
     passed++;
   }
 

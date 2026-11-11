@@ -19,6 +19,38 @@
     return a.toString(36) + b.toString(36) + str.length.toString(36);
   }
 
+  // Terim sözlüğü (glossary) için saf variant hesabı (boşsa '', değilse sıra duyarlı kararlı kısa hash)
+  function variantOf(glossary) {
+    if (!glossary) return '';
+    if (typeof glossary === 'string') {
+      const s = glossary.trim();
+      return s ? hash(s) : '';
+    }
+    if (Array.isArray(glossary)) {
+      if (!glossary.length) return '';
+      const parts = [];
+      for (const item of glossary) {
+        if (!item) continue;
+        if (typeof item === 'string') {
+          const s = item.trim();
+          if (s) parts.push(s);
+        } else if (typeof item === 'object') {
+          const src = item.src != null ? String(item.src).trim() : '';
+          const dst = item.dst != null ? String(item.dst).trim() : '';
+          if (src || dst) parts.push(src + '=>' + dst);
+        }
+      }
+      if (!parts.length) return '';
+      return hash(parts.join('\n'));
+    }
+    if (typeof glossary === 'object') {
+      const entries = Object.entries(glossary).filter(([k, v]) => k || v);
+      if (!entries.length) return '';
+      return hash(entries.map(([k, v]) => `${k}=>${v}`).join('\n'));
+    }
+    return '';
+  }
+
   function keyFor(lines, sl, tl, variant = '') {
     const v = variant == null ? '' : String(variant);
     return PREFIX + hash(String(sl) + '|' + String(tl) + '|' + v + '|' + lines.join('\u0001'));
@@ -110,8 +142,9 @@
     };
   }
 
-  const api = { createCache, keyFor, usable, wantsAI, withCache, VERSION };
+  const api = { createCache, keyFor, usable, wantsAI, withCache, variantOf, VERSION };
   ns.cache = api;
   ns.withCache = withCache;
+  ns.variantOf = variantOf;
   if (typeof module !== 'undefined') module.exports = api;
 })();

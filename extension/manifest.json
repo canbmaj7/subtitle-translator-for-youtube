@@ -50,6 +50,7 @@
         "scheduler.js",
         "wait.js",
         "meta.js",
+        "channel.js",
         "cache.js",
         "ui-appearance.js",
         "ui-transcript.js",
