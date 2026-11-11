@@ -323,6 +323,74 @@
     "message": "Groq",
     "description": "Groq engine option"
   },
+  "engineCustom": {
+    "message": "Custom (OpenAI-compatible)",
+    "description": "Custom OpenAI-compatible engine option"
+  },
+  "labelCustomEndpoint": {
+    "message": "Endpoint URL",
+    "description": "Label for custom endpoint URL input"
+  },
+  "placeholderCustomEndpoint": {
+    "message": "https://api.openai.com/v1",
+    "description": "Placeholder for custom endpoint URL input"
+  },
+  "labelCustomModel": {
+    "message": "Model name",
+    "description": "Label for custom model name input"
+  },
+  "placeholderCustomModel": {
+    "message": "gpt-4o-mini",
+    "description": "Placeholder for custom model name input"
+  },
+  "labelCustomKey": {
+    "message": "API key",
+    "description": "Label for custom API key input"
+  },
+  "placeholderCustomKey": {
+    "message": "sk-...",
+    "description": "Placeholder for custom API key input"
+  },
+  "btnGrantAccess": {
+    "message": "Grant access",
+    "description": "Button to request host permission for custom endpoint"
+  },
+  "keyStatusPermission": {
+    "message": "Needs access",
+    "description": "Key status badge when host permission is required"
+  },
+  "keyBadgePermission": {
+    "message": "Permission required",
+    "description": "Detailed key status badge in popup when host permission is missing"
+  },
+  "issuePermission": {
+    "message": "Permission to access the custom endpoint URL was not granted.",
+    "description": "Error message when custom host permission is not granted"
+  },
+  "issueEndpointHttps": {
+    "message": "Endpoint must be a valid URL starting with https://",
+    "description": "Validation message when custom endpoint is not https"
+  },
+  "labelGeminiQuality": {
+    "message": "Quality",
+    "description": "Label for Gemini quality model selection"
+  },
+  "qualityFast": {
+    "message": "Fast",
+    "description": "Gemini quality option: fast"
+  },
+  "qualityBalanced": {
+    "message": "Balanced",
+    "description": "Gemini quality option: balanced"
+  },
+  "qualityBest": {
+    "message": "Best",
+    "description": "Gemini quality option: best"
+  },
+  "shortcutNote": {
+    "message": "Shortcut: Alt+Shift+T (change at chrome://extensions/shortcuts)",
+    "description": "Plain text note about extension keyboard shortcut"
+  },
   "keyStatusValid": {
     "message": "Verified",
     "description": "Key status badge when valid"

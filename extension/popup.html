@@ -102,6 +102,22 @@
         </span>
         <span class="engine-note" id="engine-note-groq" hidden></span>
       </label>
+      <label class="engine-opt" data-engine="custom" for="engine-custom">
+        <span class="engine-left">
+          <input type="radio" name="engine" id="engine-custom" value="custom">
+          <span class="engine-check" aria-hidden="true">✓</span>
+          <span class="engine-name" data-i18n="engineCustom">Custom (OpenAI-compatible)</span>
+        </span>
+        <span class="engine-note" id="engine-note-custom" hidden></span>
+      </label>
+    </div>
+    <div class="quality-row" id="gemini-quality-wrap" hidden>
+      <span class="quality-label" data-i18n="labelGeminiQuality">Quality</span>
+      <div class="quality-group" role="radiogroup" aria-labelledby="card-engine-title">
+        <button type="button" class="quality-btn" data-quality="fast" data-i18n="qualityFast">Fast</button>
+        <button type="button" class="quality-btn" data-quality="balanced" data-i18n="qualityBalanced">Balanced</button>
+        <button type="button" class="quality-btn" data-quality="quality" data-i18n="qualityBest">Best</button>
+      </div>
     </div>
     <div class="issue-box" id="engine-issue" role="status" aria-live="polite" hidden></div>
   </section>
@@ -150,6 +166,47 @@
       </div>
       <div class="field-status">
         <span class="key-badge" id="groqKey-badge" role="status" aria-live="polite" hidden></span>
+      </div>
+    </div>
+
+    <!-- Custom Engine Fields (only visible when engine is custom) -->
+    <div id="custom-section" class="custom-section" hidden>
+      <div class="field-group">
+        <div class="field-header">
+          <label for="customEndpoint" class="field-label" data-i18n="labelCustomEndpoint">Endpoint URL</label>
+        </div>
+        <div class="input-row">
+          <input type="url" id="customEndpoint" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderCustomEndpoint" placeholder="https://api.openai.com/v1">
+          <button type="button" class="test-btn" id="customEndpoint-grant" data-i18n="btnGrantAccess">Grant access</button>
+        </div>
+        <div class="field-status">
+          <span class="key-badge" id="customEndpoint-badge" role="status" aria-live="polite" hidden></span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="customModel" class="field-label" data-i18n="labelCustomModel">Model name</label>
+        </div>
+        <div class="input-row">
+          <input type="text" id="customModel" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderCustomModel" placeholder="gpt-4o-mini">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <label for="customKey" class="field-label" data-i18n="labelCustomKey">API key</label>
+        </div>
+        <div class="input-row">
+          <div class="input-wrap">
+            <input type="password" id="customKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderCustomKey" placeholder="sk-...">
+            <button type="button" class="eye-btn" data-target="customKey" data-i18n-title="btnShowKey" aria-label="Show key"></button>
+          </div>
+          <button type="button" class="test-btn" id="customKey-test" data-provider="custom" data-i18n="btnTestKey">Test</button>
+        </div>
+        <div class="field-status">
+          <span class="key-badge" id="customKey-badge" role="status" aria-live="polite" hidden></span>
+        </div>
       </div>
     </div>
 

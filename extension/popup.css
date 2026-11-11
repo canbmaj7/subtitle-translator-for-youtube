@@ -48,6 +48,7 @@ body {
 .chip-dot { width: 5px; height: 5px; border-radius: 1px; background: var(--text-secondary); flex-shrink: 0; }
 .chip-gemini .chip-dot { background: var(--status-success); }
 .chip-groq .chip-dot { background: var(--status-warning); }
+.chip-custom .chip-dot { background: var(--accent); }
 .chip-google .chip-dot { background: var(--text-secondary); }
 .chip-error .chip-dot { background: var(--status-error); }
 .chip-ready .chip-dot { background: var(--accent); }
@@ -198,7 +199,25 @@ label.row { cursor: pointer; }
 .key-valid { border-color: var(--status-success); color: var(--status-success); background: rgba(123, 216, 143, 0.08); }
 .key-invalid { border-color: var(--status-error); color: var(--status-error); background: rgba(255, 107, 90, 0.08); }
 .key-quota { border-color: var(--status-warning); color: var(--status-warning); background: rgba(255, 159, 67, 0.08); }
+.key-permission { border-color: var(--status-warning); color: var(--status-warning); background: rgba(255, 159, 67, 0.08); }
 .key-network, .key-unchecked, .key-testing { border-color: var(--border); color: var(--text-secondary); }
+
+/* Gemini Kalite Seçimi (Kare Düğme Grubu) */
+.quality-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.quality-row[hidden], .custom-section[hidden] { display: none; }
+.quality-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.quality-group { display: inline-flex; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.quality-btn {
+  background: var(--bg-input); border: none; border-right: 1px solid var(--border);
+  color: var(--text-secondary); font: 700 11px/1 var(--font-mono); padding: 6px 10px;
+  cursor: pointer; letter-spacing: .03em; transition: background .12s ease, color .12s ease;
+}
+.quality-btn:last-child { border-right: none; }
+.quality-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.quality-btn.selected { background: var(--accent); color: #121214; }
+.quality-btn:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
+
+.custom-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
 .privacy-note { font-size: 10.5px; color: var(--text-secondary); line-height: 1.35; margin-top: 4px; }
 

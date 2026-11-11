@@ -229,4 +229,129 @@ for (const k of keysToCheck) {
   assert.ok(tr[k] && tr[k].message, `tr messages.json içinde ${k} eksik`);
 }
 
-console.log('8/8 arayüz testi geçti');
+// 9) Custom uç nokta (parseCustomEndpoint): https uç nokta kabul edilir ve origin izin deseni doğru üretilir
+assert.deepEqual(POPUP.parseCustomEndpoint('https://api.openai.com/v1'), {
+  ok: true,
+  error: '',
+  endpoint: 'https://api.openai.com/v1',
+  origin: 'https://api.openai.com',
+  permissionPattern: 'https://api.openai.com/*',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('https://api.openai.com'), {
+  ok: true,
+  error: '',
+  endpoint: 'https://api.openai.com',
+  origin: 'https://api.openai.com',
+  permissionPattern: 'https://api.openai.com/*',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('https://my-proxy.internal:8443/v1'), {
+  ok: true,
+  error: '',
+  endpoint: 'https://my-proxy.internal:8443/v1',
+  origin: 'https://my-proxy.internal:8443',
+  permissionPattern: 'https://my-proxy.internal:8443/*',
+});
+
+// 10) Custom uç nokta (parseCustomEndpoint): http://, boş, geçersiz metin reddedilir
+assert.deepEqual(POPUP.parseCustomEndpoint('http://api.openai.com/v1'), {
+  ok: false, error: 'https_required', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('ftp://api.openai.com/v1'), {
+  ok: false, error: 'https_required', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint(''), {
+  ok: false, error: 'empty', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('   '), {
+  ok: false, error: 'empty', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('///'), {
+  ok: false, error: 'empty', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint(null), {
+  ok: false, error: 'empty', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint(undefined), {
+  ok: false, error: 'empty', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('not-a-url'), {
+  ok: false, error: 'invalid', endpoint: '', origin: '', permissionPattern: '',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('https://'), {
+  ok: false, error: 'invalid', endpoint: '', origin: '', permissionPattern: '',
+});
+
+// 11) Custom uç nokta (parseCustomEndpoint): sondaki / ve fazladan boşluk temizlenir
+assert.deepEqual(POPUP.parseCustomEndpoint('  https://api.openai.com/v1/  '), {
+  ok: true,
+  error: '',
+  endpoint: 'https://api.openai.com/v1',
+  origin: 'https://api.openai.com',
+  permissionPattern: 'https://api.openai.com/*',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('https://api.openai.com/v1///'), {
+  ok: true,
+  error: '',
+  endpoint: 'https://api.openai.com/v1',
+  origin: 'https://api.openai.com',
+  permissionPattern: 'https://api.openai.com/*',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('  https://api.openai.com/v1/chat/completions/  '), {
+  ok: true,
+  error: '',
+  endpoint: 'https://api.openai.com/v1',
+  origin: 'https://api.openai.com',
+  permissionPattern: 'https://api.openai.com/*',
+});
+assert.deepEqual(POPUP.parseCustomEndpoint('  https://api.openai.com/  '), {
+  ok: true,
+  error: '',
+  endpoint: 'https://api.openai.com',
+  origin: 'https://api.openai.com',
+  permissionPattern: 'https://api.openai.com/*',
+});
+
+// 12) normalizeGeminiModel: bilinmeyen/boş değerde 'fast' döndürür, fast/balanced/quality'yi korur
+assert.equal(POPUP.normalizeGeminiModel(null), 'fast');
+assert.equal(POPUP.normalizeGeminiModel(undefined), 'fast');
+assert.equal(POPUP.normalizeGeminiModel(''), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('   '), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('unknown'), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('ultra'), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('pro'), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('fast'), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('balanced'), 'balanced');
+assert.equal(POPUP.normalizeGeminiModel('quality'), 'quality');
+assert.equal(POPUP.normalizeGeminiModel('FAST'), 'fast');
+assert.equal(POPUP.normalizeGeminiModel('Balanced'), 'balanced');
+assert.equal(POPUP.normalizeGeminiModel('QUALITY'), 'quality');
+
+// 13) custom alanlarının görünürlüğü yalnızca motor 'custom' iken (ilgili fonksiyon varsa)
+assert.equal(POPUP.shouldShowCustomFields('custom'), true);
+assert.equal(POPUP.shouldShowCustomFields('CUSTOM'), true);
+assert.equal(POPUP.shouldShowCustomFields('gemini'), false);
+assert.equal(POPUP.shouldShowCustomFields('groq'), false);
+assert.equal(POPUP.shouldShowCustomFields('auto'), false);
+assert.equal(POPUP.shouldShowCustomFields('google'), false);
+assert.equal(POPUP.shouldShowCustomFields(''), false);
+assert.equal(POPUP.shouldShowCustomFields(null), false);
+assert.equal(POPUP.shouldShowCustomFields(undefined), false);
+
+assert.equal(POPUP.shouldShowGeminiQuality('gemini'), true);
+assert.equal(POPUP.shouldShowGeminiQuality('GEMINI'), true);
+assert.equal(POPUP.shouldShowGeminiQuality('custom'), false);
+assert.equal(POPUP.shouldShowGeminiQuality('groq'), false);
+assert.equal(POPUP.shouldShowGeminiQuality('auto'), false);
+assert.equal(POPUP.shouldShowGeminiQuality(null), false);
+
+assert.deepEqual(POPUP.engineOptionState('custom', { customKey: 'sk-test' }, {}), {
+  code: 'custom', labelKey: 'engineCustom', hasKey: true, dim: false, noteKey: '',
+});
+assert.deepEqual(POPUP.engineOptionState('custom', { customKey: '' }, {}), {
+  code: 'custom', labelKey: 'engineCustom', hasKey: false, dim: true, noteKey: 'engineNoKey',
+});
+assert.deepEqual(POPUP.popupKeyBadge('custom', 'sk-test', { custom: { state: 'permission' } }, false), {
+  visible: true, state: 'permission', msgKey: 'keyBadgePermission', tone: 'orange',
+});
+
+console.log('13/13 arayüz testi geçti');

@@ -4,14 +4,14 @@
 
   const ISSUE_KEYS = {
     nokey: 'issueNokey', invalid: 'issueInvalid', quota: 'issueQuota', network: 'issueNetwork',
-    timeout: 'issueTimeout', server: 'issueServer', mismatch: 'issueMismatch', unknown: 'issueUnknown',
+    timeout: 'issueTimeout', server: 'issueServer', mismatch: 'issueMismatch', permission: 'issuePermission', unknown: 'issueUnknown',
   };
   const BADGE_KEYS = {
     valid: 'keyStatusValid', invalid: 'keyStatusInvalid', quota: 'keyStatusQuota',
-    network: 'keyStatusNetwork', unchecked: 'keyStatusUnchecked',
+    network: 'keyStatusNetwork', permission: 'keyStatusPermission', unchecked: 'keyStatusUnchecked',
   };
   const ENGINE_LABEL_KEYS = {
-    auto: 'engineAuto', google: 'engineGoogle', gemini: 'engineGemini', groq: 'engineGroq',
+    auto: 'engineAuto', google: 'engineGoogle', gemini: 'engineGemini', groq: 'engineGroq', custom: 'engineCustom',
   };
 
   function issueMessageKey(code) {
@@ -49,36 +49,25 @@
   const SVGNS = 'http://www.w3.org/2000/svg';
   function makeChevronRight() {
     const svg = document.createElementNS(SVGNS, 'svg');
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('width', '12');
-    svg.setAttribute('height', '12');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.setAttribute('class', 'ytr-row-arrow-svg');
+    svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('width', '12'); svg.setAttribute('height', '12');
+    svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('class', 'ytr-row-arrow-svg');
     const path = document.createElementNS(SVGNS, 'path');
-    path.setAttribute('d', 'M6 3.5 L10.5 8 L6 12.5');
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', 'currentColor');
-    path.setAttribute('stroke-width', '1.5');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('d', 'M6 3.5 L10.5 8 L6 12.5'); path.setAttribute('fill', 'none'); path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.5'); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
     svg.appendChild(path);
     return svg;
   }
 
   function makeSwitch() {
-    const wrap = el('span', 'ytr-switch');
-    wrap.setAttribute('aria-hidden', 'true');
-    const input = el('input');
-    input.type = 'checkbox'; input.tabIndex = -1;
+    const wrap = el('span', 'ytr-switch'); wrap.setAttribute('aria-hidden', 'true');
+    const input = el('input'); input.type = 'checkbox'; input.tabIndex = -1;
     wrap.append(input, el('span', 'ytr-switch-slider'));
     return { wrap, input };
   }
 
   function makeCheckboxRow(labelText, descText, onToggle) {
     const r = el('div', 'ytr-row ytr-menuitem');
-    r.setAttribute('role', 'menuitemcheckbox');
-    r.setAttribute('aria-checked', 'false');
-    r.tabIndex = 0;
+    r.setAttribute('role', 'menuitemcheckbox'); r.setAttribute('aria-checked', 'false'); r.tabIndex = 0;
     const sw = makeSwitch();
     if (descText) {
       const w = el('div', 'ytr-row-text');
@@ -88,23 +77,16 @@
       r.append(el('span', 'ytr-row-label', labelText), sw.wrap);
     }
     r.addEventListener('click', (e) => { e.stopPropagation(); onToggle(!sw.input.checked); });
-    const setChecked = (val) => {
-      sw.input.checked = !!val;
-      r.setAttribute('aria-checked', String(!!val));
-    };
+    const setChecked = (val) => { sw.input.checked = !!val; r.setAttribute('aria-checked', String(!!val)); };
     return { row: r, input: sw.input, setChecked };
   }
 
   function makeNavRow(labelText, pageId, onOpen) {
     const r = el('div', 'ytr-row ytr-menuitem');
-    r.setAttribute('role', 'menuitem');
-    r.setAttribute('aria-haspopup', 'true');
-    r.dataset.subpage = pageId;
-    r.tabIndex = 0;
+    r.setAttribute('role', 'menuitem'); r.setAttribute('aria-haspopup', 'true'); r.dataset.subpage = pageId; r.tabIndex = 0;
     const right = el('span', 'ytr-row-right');
     const val = el('span', 'ytr-row-value');
-    const arr = el('span', 'ytr-row-arrow');
-    arr.appendChild(makeChevronRight());
+    const arr = el('span', 'ytr-row-arrow'); arr.appendChild(makeChevronRight());
     right.append(val, arr);
     r.append(el('span', 'ytr-row-label', labelText), right);
     r.addEventListener('click', (e) => { e.stopPropagation(); onOpen(pageId); });
@@ -113,8 +95,7 @@
 
   function makeBackHeader(titleText, onBack) {
     const r = el('div', 'ytr-row ytr-menuitem ytr-back-row');
-    r.setAttribute('role', 'menuitem');
-    r.tabIndex = 0;
+    r.setAttribute('role', 'menuitem'); r.tabIndex = 0;
     const left = el('span', 'ytr-back-left');
     left.append(el('span', 'ytr-back-arrow', '←'), el('span', 'ytr-back-text', ns.t('btnBack')));
     r.append(left, el('span', 'ytr-subpage-title', titleText));
@@ -143,8 +124,7 @@
     progRow.append(progText, retryBtn);
     const progBar = el('div', 'ytr-progress-bar');
     const progFill = el('div', 'ytr-progress-fill');
-    progBar.append(progFill);
-    progBox.append(progRow, progBar);
+    progBar.append(progFill); progBox.append(progRow, progBar);
 
     const statusBox = el('div', 'ytr-status-box');
     const note = el('div', 'ytr-note'); note.hidden = true;
@@ -184,13 +164,13 @@
     const keyInfoBox = el('div', 'ytr-info-box', ns.t('keyAddInfo')); keyInfoBox.hidden = true;
     const issueBox = el('div', 'ytr-issue-box'); issueBox.hidden = true;
 
-    for (const code of ['auto', 'google', 'gemini', 'groq']) {
+    for (const code of ['auto', 'google', 'gemini', 'groq', 'custom']) {
       const item = el('div', 'ytr-row ytr-menuitem ytr-radio-row');
       item.setAttribute('role', 'menuitemradio'); item.setAttribute('aria-checked', 'false'); item.tabIndex = 0;
       const left = el('span', 'ytr-radio-left');
       left.append(el('span', 'ytr-radio-check', '✓'), el('span', 'ytr-row-label', ns.t(engineLabelKey(code))));
       item.appendChild(left);
-      if (code === 'gemini' || code === 'groq') {
+      if (code === 'gemini' || code === 'groq' || code === 'custom') {
         const badge = el('span', 'ytr-key-badge');
         badge.addEventListener('click', (e) => {
           if (!keyBadgeInfo(getLocalState().keyStatus, code).hasKey) { e.stopPropagation(); keyInfoBox.hidden = false; }
@@ -200,12 +180,31 @@
       }
       item.addEventListener('click', (e) => {
         e.stopPropagation();
-        if ((code === 'gemini' || code === 'groq') && !keyBadgeInfo(getLocalState().keyStatus, code).hasKey) keyInfoBox.hidden = false;
+        if ((code === 'gemini' || code === 'groq' || code === 'custom') && !keyBadgeInfo(getLocalState().keyStatus, code).hasKey) keyInfoBox.hidden = false;
         setSetting('engine', code);
       });
       engItems[code] = item;
     }
-    pEng.append(makeBackHeader(ns.t('navEngine'), () => showPage('main')), engItems.auto, engItems.google, engItems.gemini, engItems.groq, keyInfoBox, issueBox);
+
+    // Gemini Kalite Seçimi
+    const geminiQualityRow = el('div', 'ytr-quality-row'); geminiQualityRow.hidden = true;
+    geminiQualityRow.append(el('span', 'ytr-quality-label', ns.t('labelGeminiQuality')));
+    const qGroup = el('div', 'ytr-quality-group');
+    const qBtns = {};
+    for (const [tier, lKey] of [['fast', 'qualityFast'], ['balanced', 'qualityBalanced'], ['quality', 'qualityBest']]) {
+      const b = el('button', 'ytr-quality-btn', ns.t(lKey));
+      b.type = 'button'; b.dataset.quality = tier;
+      b.addEventListener('click', (e) => { e.stopPropagation(); setSetting('geminiModel', tier); });
+      qGroup.appendChild(b);
+      qBtns[tier] = b;
+    }
+    geminiQualityRow.appendChild(qGroup);
+
+    pEng.append(
+      makeBackHeader(ns.t('navEngine'), () => showPage('main')),
+      engItems.auto, engItems.google, engItems.gemini, engItems.groq, engItems.custom,
+      geminiQualityRow, keyInfoBox, issueBox
+    );
     pages.engine = pEng;
 
     // Transkript ve Görünüm alt sayfaları
@@ -215,7 +214,7 @@
     pages.transcript = transSub.page;
     pages.appearance = appSub.page;
 
-    // Gelişmiş Sayfası
+    // Gelişmiş Sayfası (Kısayol notu dahil)
     const pAdv = el('div', 'ytr-page'); pAdv.hidden = true;
     const verRow = el('div', 'ytr-row ytr-menuitem');
     verRow.setAttribute('role', 'menuitem'); verRow.tabIndex = 0;
@@ -223,12 +222,13 @@
     try { if (chrome && chrome.runtime && chrome.runtime.getManifest) ver = chrome.runtime.getManifest().version; } catch (_) {}
     verRow.append(el('span', 'ytr-row-label', ns.t('rowVersion')), el('span', 'ytr-row-value', 'v' + ver));
 
+    const shortcutRow = el('div', 'ytr-shortcut-row', ns.t('shortcutNote'));
     const repoLink = el('a', 'ytr-row ytr-menuitem ytr-link-row');
     repoLink.setAttribute('role', 'menuitem'); repoLink.tabIndex = 0;
     repoLink.href = 'https://github.com/canbmaj7/subtitle-translator-for-youtube';
     repoLink.target = '_blank'; repoLink.rel = 'noopener noreferrer';
     repoLink.append(el('span', 'ytr-row-label', ns.t('rowRepoPrivacy')), el('span', 'ytr-row-arrow', '↗'));
-    pAdv.append(makeBackHeader(ns.t('navAdvanced'), () => showPage('main')), verRow, repoLink);
+    pAdv.append(makeBackHeader(ns.t('navAdvanced'), () => showPage('main')), verRow, shortcutRow, repoLink);
     pages.advanced = pAdv;
 
     Object.assign(refs, {
@@ -238,11 +238,8 @@
 
     function refreshPages(target, enginePref) {
       const s = getSettings(), loc = getLocalState();
-      chkEnabled.setChecked(!!s.enabled);
-      chkOrig.setChecked(!!s.showOriginal);
-      chkWait.setChecked(!!s.waitForTranslation);
-      navLang.val.textContent = getTargetName(target);
-      navEng.val.textContent = ns.t(engineLabelKey(enginePref));
+      chkEnabled.setChecked(!!s.enabled); chkOrig.setChecked(!!s.showOriginal); chkWait.setChecked(!!s.waitForTranslation);
+      navLang.val.textContent = getTargetName(target); navEng.val.textContent = ns.t(engineLabelKey(enginePref));
       const trData = (ns.getTranscript && ns.getTranscript()) || {};
       const trCount = Array.isArray(trData.sentences) ? trData.sentences.length : 0;
       navTrans.val.textContent = trCount > 0 ? String(trCount) : '';
@@ -253,20 +250,22 @@
 
       for (const [code, item] of Object.entries(langItems)) {
         const active = code === target;
-        item.classList.toggle('ytr-selected', active);
-        item.setAttribute('aria-checked', String(active));
+        item.classList.toggle('ytr-selected', active); item.setAttribute('aria-checked', String(active));
       }
       for (const [code, item] of Object.entries(engItems)) {
         const active = code === enginePref;
-        item.classList.toggle('ytr-selected', active);
-        item.setAttribute('aria-checked', String(active));
-        if (code === 'gemini' || code === 'groq') {
+        item.classList.toggle('ytr-selected', active); item.setAttribute('aria-checked', String(active));
+        if (code === 'gemini' || code === 'groq' || code === 'custom') {
           const info = keyBadgeInfo(loc.keyStatus, code);
           item.classList.toggle('ytr-item-dim', !info.hasKey);
           engBadges[code].className = 'ytr-key-badge ytr-key-' + info.state;
           engBadges[code].textContent = ns.t(info.msgKey);
         }
       }
+      geminiQualityRow.hidden = (enginePref !== 'gemini');
+      const curTier = s.geminiModel || 'fast';
+      for (const [tier, b] of Object.entries(qBtns)) b.classList.toggle('ytr-selected', tier === curTier);
+
       const issue = findRelevantIssue(enginePref, loc.lastIssues);
       issueBox.hidden = !issue;
       issueBox.textContent = issue ? (issue.engine ? issue.engine + ': ' : '') + ns.t(issue.msgKey) : '';

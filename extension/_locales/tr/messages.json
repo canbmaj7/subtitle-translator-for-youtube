@@ -323,6 +323,74 @@
     "message": "Groq",
     "description": "Groq engine option"
   },
+  "engineCustom": {
+    "message": "Özel (OpenAI uyumlu)",
+    "description": "Custom OpenAI-compatible engine option"
+  },
+  "labelCustomEndpoint": {
+    "message": "Uç nokta URL'si",
+    "description": "Label for custom endpoint URL input"
+  },
+  "placeholderCustomEndpoint": {
+    "message": "https://api.openai.com/v1",
+    "description": "Placeholder for custom endpoint URL input"
+  },
+  "labelCustomModel": {
+    "message": "Model adı",
+    "description": "Label for custom model name input"
+  },
+  "placeholderCustomModel": {
+    "message": "gpt-4o-mini",
+    "description": "Placeholder for custom model name input"
+  },
+  "labelCustomKey": {
+    "message": "API anahtarı",
+    "description": "Label for custom API key input"
+  },
+  "placeholderCustomKey": {
+    "message": "sk-...",
+    "description": "Placeholder for custom API key input"
+  },
+  "btnGrantAccess": {
+    "message": "Erişim izni ver",
+    "description": "Button to request host permission for custom endpoint"
+  },
+  "keyStatusPermission": {
+    "message": "İzin gerekli",
+    "description": "Key status badge when host permission is required"
+  },
+  "keyBadgePermission": {
+    "message": "Erişim izni gerekli",
+    "description": "Detailed key status badge in popup when host permission is missing"
+  },
+  "issuePermission": {
+    "message": "Özel uç nokta URL'sine erişim izni verilmedi.",
+    "description": "Error message when custom host permission is not granted"
+  },
+  "issueEndpointHttps": {
+    "message": "Uç nokta https:// ile başlayan geçerli bir URL olmalıdır",
+    "description": "Validation message when custom endpoint is not https"
+  },
+  "labelGeminiQuality": {
+    "message": "Kalite",
+    "description": "Label for Gemini quality model selection"
+  },
+  "qualityFast": {
+    "message": "Hızlı",
+    "description": "Gemini quality option: fast"
+  },
+  "qualityBalanced": {
+    "message": "Dengeli",
+    "description": "Gemini quality option: balanced"
+  },
+  "qualityBest": {
+    "message": "En iyi",
+    "description": "Gemini quality option: best"
+  },
+  "shortcutNote": {
+    "message": "Kısayol: Alt+Shift+T (chrome://extensions/shortcuts sayfasından değiştirin)",
+    "description": "Plain text note about extension keyboard shortcut"
+  },
   "keyStatusValid": {
     "message": "Doğrulandı",
     "description": "Key status badge when valid"
