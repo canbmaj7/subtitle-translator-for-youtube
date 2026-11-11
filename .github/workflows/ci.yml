@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run unit tests
+        run: |
+          node tests/engine.test.cjs
+          node tests/sentences.test.cjs
+          node tests/transcript.test.cjs
+          node tests/ui.test.cjs
+          node tests/scheduler.test.cjs
+          node tests/cache.test.cjs
+
+      - name: Run store checks
+        run: node scripts/check-store.cjs
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm i --no-save playwright-core
+          npx playwright-core install --with-deps chromium
+
+      - name: Run end-to-end tests
+        env:
+          PLAYWRIGHT_CORE: playwright-core
+        run: node tests/e2e.cjs

@@ -390,5 +390,9 @@
   "rowRepoPrivacy": {
     "message": "Kaynak kodu ve gizlilik",
     "description": "Repository and privacy link label"
+  },
+  "cmdToggleTranslation": {
+    "message": "Çeviriyi aç/kapa",
+    "description": "Keyboard shortcut to toggle translation"
   }
 }

@@ -390,5 +390,9 @@
   "rowRepoPrivacy": {
     "message": "Source code & privacy",
     "description": "Repository and privacy link label"
+  },
+  "cmdToggleTranslation": {
+    "message": "Toggle translation on/off",
+    "description": "Keyboard shortcut to toggle translation"
   }
 }

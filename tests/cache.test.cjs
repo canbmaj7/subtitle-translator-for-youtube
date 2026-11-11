@@ -3,12 +3,17 @@ const assert = require('assert');
 const path = require('path');
 
 globalThis.YTR = {};
-const { createCache, keyFor, usable, wantsAI } = require(path.join(__dirname, '../extension/cache.js'));
+const { createCache, keyFor, usable, wantsAI, withCache, VERSION } = require(path.join(__dirname, '../extension/cache.js'));
 
 // chrome.storage.local benzeri bellek içi depo
 function fakeStore() {
   const data = {};
   const pick = (k) => {
+    if (k && typeof k === 'object' && !Array.isArray(k)) {
+      const out = { ...k };
+      for (const x of Object.keys(k)) if (x in data) out[x] = JSON.parse(JSON.stringify(data[x]));
+      return out;
+    }
     const keys = Array.isArray(k) ? k : [k];
     const out = {};
     for (const x of keys) if (x in data) out[x] = JSON.parse(JSON.stringify(data[x]));
@@ -24,12 +29,17 @@ function fakeStore() {
 
 (async () => {
   let passed = 0;
-  const total = 8;
+  const total = 11;
   const L = ['Hello world', 'How are you'];
 
-  // 1) Yaz-oku gidiş dönüş
+  // 1) Yaz-oku gidiş dönüş ve VERSION 2
   {
-    const c = createCache(fakeStore());
+    assert.equal(VERSION, 2);
+    assert.ok(keyFor(L, 'en', 'tr').startsWith('tc2:'), 'anahtar tc2: ile başlamalı');
+    const store = fakeStore();
+    // Eski v1 kaydı görmezden gelinir
+    store.data['tc1:eski'] = { res: ['Eski 1', 'Eski 2'], engine: 'Gemini' };
+    const c = createCache(store);
     assert.equal(await c.get(L, 'en', 'tr', false), null);
     await c.put(L, 'en', 'tr', ['Merhaba dünya', 'Nasılsın'], 'Gemini');
     const hit = await c.get(L, 'en', 'tr', false);
@@ -37,11 +47,14 @@ function fakeStore() {
     passed++;
   }
 
-  // 2) Anahtar: kaynak dil, hedef dil ve metin ayırır; aynı girdi aynı anahtarı verir
+  // 2) Anahtar: kaynak dil, hedef dil, variant ve metin ayırır; aynı girdi aynı anahtarı verir
   {
     assert.equal(keyFor(L, 'en', 'tr'), keyFor(L.slice(), 'en', 'tr'));
+    assert.equal(keyFor(L, 'en', 'tr'), keyFor(L, 'en', 'tr', ''));
     assert.notEqual(keyFor(L, 'en', 'tr'), keyFor(L, 'en', 'de'));
     assert.notEqual(keyFor(L, 'en', 'tr'), keyFor(L, 'fr', 'tr'));
+    assert.notEqual(keyFor(L, 'en', 'tr', 'fast'), keyFor(L, 'en', 'tr', 'quality'));
+    assert.notEqual(keyFor(L, 'en', 'tr', ''), keyFor(L, 'en', 'tr', 'custom:gpt-4o'));
     assert.notEqual(keyFor(['a b'], 'en', 'tr'), keyFor(['a', 'b'], 'en', 'tr'));
     assert.notEqual(keyFor(['ab', 'c'], 'en', 'tr'), keyFor(['a', 'bc'], 'en', 'tr'));
     const c = createCache(fakeStore());
@@ -88,7 +101,7 @@ function fakeStore() {
     assert.equal((await c.get(['a'], 'en', 'tr', false)).res[0], 'A2');
     assert.ok(await c.get(['c'], 'en', 'tr', false));
     assert.ok(await c.get(['d'], 'en', 'tr', false));
-    assert.equal(store.data['tcIndex1'].length, 3);
+    assert.equal(store.data['tcIndex2'].length, 3);
     passed++;
   }
 
@@ -97,8 +110,8 @@ function fakeStore() {
     const store = fakeStore();
     const c = createCache(store, 50);
     await Promise.all(Array.from({ length: 20 }, (_, i) => c.put(['s' + i], 'en', 'tr', ['t' + i], 'Gemini')));
-    assert.equal(store.data['tcIndex1'].length, 20);
-    assert.equal(new Set(store.data['tcIndex1']).size, 20);
+    assert.equal(store.data['tcIndex2'].length, 20);
+    assert.equal(new Set(store.data['tcIndex2']).size, 20);
     for (let i = 0; i < 20; i++) assert.equal((await c.get(['s' + i], 'en', 'tr', false)).res[0], 't' + i);
     passed++;
   }
@@ -114,7 +127,7 @@ function fakeStore() {
     passed++;
   }
 
-  // 8) wantsAI: anahtar durumuna ve motor tercihine göre; anahtarın kendisi gerekmez
+  // 8) wantsAI: anahtar durumuna ve motor tercihine göre; gemini, groq ve custom dahil
   {
     assert.equal(wantsAI('auto', {}), false);
     assert.equal(wantsAI('auto', { gemini: { state: 'valid' } }), true);
@@ -122,7 +135,73 @@ function fakeStore() {
     assert.equal(wantsAI('auto', { gemini: { state: 'invalid' } }), false);
     assert.equal(wantsAI('google', { gemini: { state: 'valid' } }), false);
     assert.equal(wantsAI('groq', { groq: { state: 'unchecked' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'valid' } }), true);
+    assert.equal(wantsAI('custom', { custom: { state: 'unchecked' } }), true);
+    assert.equal(wantsAI('auto', { custom: { state: 'invalid' } }), false);
+    assert.equal(wantsAI('google', { custom: { state: 'valid' } }), false);
     assert.equal(wantsAI('auto', undefined), false);
+    passed++;
+  }
+
+  // 9) get/put variant ayrımı: farklı variant kayıtları birbirine karışmaz
+  {
+    const c = createCache(fakeStore());
+    await c.put(L, 'en', 'tr', ['hızlı 1', 'hızlı 2'], 'Gemini', 'fast');
+    await c.put(L, 'en', 'tr', ['kaliteli 1', 'kaliteli 2'], 'Gemini', 'quality');
+    assert.equal(await c.get(L, 'en', 'tr', true), null, 'varsayılan boş variant isabet etmemeli');
+    assert.deepEqual((await c.get(L, 'en', 'tr', true, 'fast')).res, ['hızlı 1', 'hızlı 2']);
+    assert.deepEqual((await c.get(L, 'en', 'tr', true, 'quality')).res, ['kaliteli 1', 'kaliteli 2']);
+    passed++;
+  }
+
+  // 10) withCache: getLangs() { sl, tl } döndürdüğünde (variant yok -> '') çalışır
+  {
+    const localStore = fakeStore();
+    const syncStore = fakeStore();
+    globalThis.chrome = { storage: { local: localStore, sync: syncStore } };
+    let sendCalls = 0;
+    const wrapped = withCache(async (lines) => {
+      sendCalls++;
+      return { ok: true, res: lines.map((x) => 'TR:' + x), engine: 'Gemini' };
+    }, () => ({ sl: 'en', tl: 'tr' }));
+    const r1 = await wrapped(L);
+    assert.equal(r1.ok, true);
+    assert.equal(r1.cached, undefined);
+    assert.equal(sendCalls, 1);
+    const r2 = await wrapped(L);
+    assert.equal(r2.ok, true);
+    assert.equal(r2.cached, true);
+    assert.equal(sendCalls, 1);
+    passed++;
+  }
+
+  // 11) withCache: getLangs() { sl, tl, variant } döndürdüğünde variant değişince yeniden çevirir
+  {
+    const localStore = fakeStore();
+    const syncStore = fakeStore();
+    globalThis.chrome = { storage: { local: localStore, sync: syncStore } };
+    let currentVariant = 'gemini:fast';
+    let sendCalls = 0;
+    const wrapped = withCache(async (lines) => {
+      sendCalls++;
+      return { ok: true, res: lines.map((x) => currentVariant + ':' + x), engine: 'Gemini' };
+    }, () => ({ sl: 'en', tl: 'tr', variant: currentVariant }));
+
+    const rFast = await wrapped(L);
+    assert.deepEqual(rFast.res, ['gemini:fast:Hello world', 'gemini:fast:How are you']);
+    assert.equal(sendCalls, 1);
+
+    currentVariant = 'gemini:quality';
+    const rQual = await wrapped(L);
+    assert.deepEqual(rQual.res, ['gemini:quality:Hello world', 'gemini:quality:How are you']);
+    assert.equal(sendCalls, 2, 'farklı variant önbelleği atlamalı');
+
+    // Tekrar fast'e dönünce önbellekten gelir
+    currentVariant = 'gemini:fast';
+    const rFastCached = await wrapped(L);
+    assert.equal(rFastCached.cached, true);
+    assert.deepEqual(rFastCached.res, ['gemini:fast:Hello world', 'gemini:fast:How are you']);
+    assert.equal(sendCalls, 2);
     passed++;
   }
 

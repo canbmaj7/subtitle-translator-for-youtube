@@ -13,6 +13,18 @@
     "https://generativelanguage.googleapis.com/*",
     "https://api.groq.com/*"
   ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "commands": {
+    "toggle-translation": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "Alt+Shift+T"
+      },
+      "description": "__MSG_cmdToggleTranslation__"
+    }
+  },
   "background": {
     "service_worker": "background.js"
   },

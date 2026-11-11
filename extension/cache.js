@@ -3,7 +3,7 @@
 // Kayıtlar yalnızca bu cihazda kalır; anahtar veya video bilgisi içermez.
 (() => {
   const ns = (globalThis.YTR = globalThis.YTR || {});
-  const VERSION = 1; // istem/biçim değişince artır: eski kayıtlar kullanılmaz
+  const VERSION = 2; // istem/biçim değişince artır: eski kayıtlar kullanılmaz
   const PREFIX = 'tc' + VERSION + ':';
   const INDEX = 'tcIndex' + VERSION;
   const MAX_ENTRIES = 500;
@@ -19,8 +19,9 @@
     return a.toString(36) + b.toString(36) + str.length.toString(36);
   }
 
-  function keyFor(lines, sl, tl) {
-    return PREFIX + hash(String(sl) + '|' + String(tl) + '|' + lines.join('\u0001'));
+  function keyFor(lines, sl, tl, variant = '') {
+    const v = variant == null ? '' : String(variant);
+    return PREFIX + hash(String(sl) + '|' + String(tl) + '|' + v + '|' + lines.join('\u0001'));
   }
 
   // Google ile çevrilmiş kayıt, yapay zekâ motoru kullanılabilecekken kullanılmaz (kalite)
@@ -34,18 +35,18 @@
   function createCache(store, maxEntries = MAX_ENTRIES) {
     let queue = Promise.resolve(); // dizin okuma-değiştirme-yazma sırası
 
-    async function get(lines, sl, tl, wantAI) {
+    async function get(lines, sl, tl, wantAI, variant = '') {
       if (!lines || !lines.length) return null;
-      const key = keyFor(lines, sl, tl);
+      const key = keyFor(lines, sl, tl, variant);
       const data = await store.get(key);
       const entry = data && data[key];
       if (!usable(entry, lines, wantAI)) return null;
       return { res: entry.res.slice(), engine: entry.engine };
     }
 
-    function put(lines, sl, tl, res, engine) {
+    function put(lines, sl, tl, res, engine, variant = '') {
       if (!lines || !lines.length || !Array.isArray(res) || res.length !== lines.length) return Promise.resolve();
-      const key = keyFor(lines, sl, tl);
+      const key = keyFor(lines, sl, tl, variant);
       queue = queue.then(async () => {
         const idx = ((await store.get(INDEX))[INDEX] || []).filter((k) => k !== key);
         idx.push(key);
@@ -68,10 +69,10 @@
   function wantsAI(enginePref, keyStatus) {
     if (enginePref === 'google') return false;
     const ks = keyStatus || {};
-    return ['gemini', 'groq'].some((p) => ks[p] && ks[p].state !== 'invalid');
+    return ['gemini', 'groq', 'custom'].some((p) => ks[p] && ks[p].state !== 'invalid');
   }
 
-  // send(lines, ctx) fonksiyonunu önbellekle sarar; getLangs() -> { sl, tl }
+  // send(lines, ctx) fonksiyonunu önbellekle sarar; getLangs() -> { sl, tl, variant? }
   function withCache(send, getLangs) {
     let cache = null;
     const area = () => (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) || null;
@@ -88,7 +89,9 @@
     };
     return async (lines, ctx) => {
       const c = ensure();
-      const { sl, tl } = getLangs();
+      const langs = (getLangs && getLangs()) || {};
+      const { sl, tl } = langs;
+      const variant = langs.variant != null ? String(langs.variant) : '';
       let wantAI = false;
       if (c) {
         try {
@@ -97,17 +100,17 @@
             chrome.storage.local.get({ keyStatus: {} }),
           ]);
           wantAI = wantsAI(String(sy.engine || 'auto').toLowerCase(), lo.keyStatus);
-          const hit = await c.get(lines, sl, tl, wantAI);
+          const hit = await c.get(lines, sl, tl, wantAI, variant);
           if (hit) return { ok: true, res: hit.res, engine: hit.engine, cached: true };
         } catch (_) { /* önbellek bozuksa normal çeviriye düş */ }
       }
       const resp = await send(lines, ctx);
-      if (c && resp && resp.ok && Array.isArray(resp.res)) c.put(lines, sl, tl, resp.res, resp.engine);
+      if (c && resp && resp.ok && Array.isArray(resp.res)) c.put(lines, sl, tl, resp.res, resp.engine, variant);
       return resp;
     };
   }
 
-  const api = { createCache, keyFor, usable, wantsAI };
+  const api = { createCache, keyFor, usable, wantsAI, withCache, VERSION };
   ns.cache = api;
   ns.withCache = withCache;
   if (typeof module !== 'undefined') module.exports = api;

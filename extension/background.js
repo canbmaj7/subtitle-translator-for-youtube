@@ -6,7 +6,16 @@ const INVALID_KEY_RE = /API_KEY_INVALID|API key not valid|invalid_api_key|invali
 const VALID_CODES = new Set(['nokey', 'invalid', 'quota', 'network', 'timeout', 'server', 'mismatch', 'unknown']);
 const cooldown = {}; // motor -> yeniden denenebileceği zaman (ms)
 const cooldownCode = {}; // motor -> son hata kodu
-const config = { llmTimeoutMs: 30000, gtxTimeoutMs: 15000, validateTimeoutMs: 10000 };
+const config = {
+  llmTimeoutMs: 30000,
+  gtxTimeoutMs: 15000,
+  validateTimeoutMs: 10000,
+  gtxMinIntervalMs: 150,
+  gtxMaxConcurrent: 2,
+  gtxCooldownMs: 20000,
+  gtxMaxDepth: 6,
+  sleep: (ms) => new Promise((ok) => setTimeout(ok, ms)),
+};
 
 class HttpError extends Error {
   constructor(status, body) {
@@ -316,34 +325,157 @@ async function viaGroq(key, lines, sl, tl, ctx) {
   return out;
 }
 
-async function gtx(lines, sl, tl) {
-  const body = new URLSearchParams();
-  body.set('q', lines.join('\n'));
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(mapGtxLang(sl) || 'auto')}&tl=${encodeURIComponent(mapGtxLang(tl))}&dt=t&dj=0`;
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), config.gtxTimeoutMs);
-  try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body, signal: ctrl.signal });
-    if (!r.ok) throw new HttpError(r.status, '');
-    const data = await r.json();
-    return (data[0] || []).map((s) => s[0] || '').join('');
-  } catch (e) {
-    if (ctrl.signal.aborted || (e && (e.name === 'AbortError' || e.name === 'TimeoutError'))) throw new HttpError(0, 'timeout');
-    throw e;
-  } finally {
-    clearTimeout(t);
+function checkGoogleCooldown() {
+  if (cooldown.Google && cooldown.Google > Date.now()) {
+    const code = cooldownCode.Google || 'quota';
+    const status = code === 'server' ? 503 : 429;
+    const err = new HttpError(status, 'cooldown: ' + code);
+    err.code = code;
+    throw err;
   }
 }
 
-async function viaGtx(lines, sl, tl) {
-  const parts = (await gtx(lines, sl, tl)).split('\n');
+class GtxQueue {
+  constructor(options = {}) {
+    this.options = options;
+    this.queue = [];
+    this.active = 0;
+    this.lastDispatch = 0;
+    this.pumping = false;
+  }
+
+  get maxConcurrent() {
+    return this.options.maxConcurrent ?? config.gtxMaxConcurrent ?? 2;
+  }
+
+  get minIntervalMs() {
+    return this.options.minIntervalMs ?? config.gtxMinIntervalMs ?? config.gtxDelayMs ?? 150;
+  }
+
+  get sleepFn() {
+    return this.options.sleep ?? config.sleep ?? ((ms) => new Promise((ok) => setTimeout(ok, ms)));
+  }
+
+  enqueue(fn) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ fn, resolve, reject });
+      this._pump();
+    });
+  }
+
+  async _pump() {
+    if (this.pumping) return;
+    this.pumping = true;
+    try {
+      while (this.queue.length > 0) {
+        if (this.active >= this.maxConcurrent) {
+          break;
+        }
+        const now = (this.options.now || config.now || Date.now)();
+        const elapsed = now - this.lastDispatch;
+        const minInt = this.minIntervalMs;
+        if (minInt > 0 && elapsed < minInt && this.lastDispatch > 0) {
+          const waitMs = minInt - elapsed;
+          await this.sleepFn(waitMs);
+          continue;
+        }
+        if (this.active >= this.maxConcurrent) {
+          break;
+        }
+        const item = this.queue.shift();
+        if (!item) break;
+
+        this.active++;
+        this.lastDispatch = (this.options.now || config.now || Date.now)();
+
+        (async () => {
+          try {
+            const res = await item.fn();
+            item.resolve(res);
+          } catch (err) {
+            item.reject(err);
+          } finally {
+            this.active--;
+            this._pump();
+          }
+        })();
+      }
+    } finally {
+      this.pumping = false;
+    }
+  }
+
+  clear() {
+    this.queue = [];
+    this.active = 0;
+    this.lastDispatch = 0;
+    this.pumping = false;
+  }
+}
+
+const gtxQueue = new GtxQueue();
+
+async function gtx(lines, sl, tl) {
+  checkGoogleCooldown();
+  return gtxQueue.enqueue(async () => {
+    checkGoogleCooldown();
+    const body = new URLSearchParams();
+    body.set('q', lines.join('\n'));
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(mapGtxLang(sl) || 'auto')}&tl=${encodeURIComponent(mapGtxLang(tl))}&dt=t&dj=0`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), config.gtxTimeoutMs);
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body, signal: ctrl.signal });
+      if (!r.ok) {
+        if (r.status === 429) {
+          cooldown.Google = Date.now() + (config.gtxCooldownMs || 20000);
+          cooldownCode.Google = 'quota';
+        } else if (r.status >= 500 && r.status < 600) {
+          cooldown.Google = Date.now() + (config.gtxCooldownMs || 20000);
+          cooldownCode.Google = 'server';
+        }
+        throw new HttpError(r.status, '');
+      }
+      const data = await r.json();
+      return (data[0] || []).map((s) => s[0] || '').join('');
+    } catch (e) {
+      if (ctrl.signal.aborted || (e && (e.name === 'AbortError' || e.name === 'TimeoutError'))) throw new HttpError(0, 'timeout');
+      throw e;
+    } finally {
+      clearTimeout(t);
+    }
+  });
+}
+
+async function viaGtx(lines, sl, tl, depth = 0) {
+  checkGoogleCooldown();
+  if (!Array.isArray(lines) || lines.length === 0) return [];
+  if (lines.length === 1) {
+    const raw = await gtx(lines, sl, tl);
+    return [(raw || '').replace(/\r/g, '').replace(/\n/g, ' ').trim()];
+  }
+
+  const maxDepth = config.gtxMaxDepth || 6;
+  if (depth >= maxDepth) {
+    const out = [];
+    for (const l of lines) {
+      const raw = await gtx([l], sl, tl);
+      out.push((raw || '').replace(/\r/g, '').replace(/\n/g, ' ').trim());
+    }
+    return out;
+  }
+
+  const raw = await gtx(lines, sl, tl);
+  const parts = (raw || '').replace(/\r/g, '').split('\n');
   while (parts.length > lines.length && parts[parts.length - 1] === '') parts.pop();
   if (parts.length === lines.length) return parts;
-  const out = [];
-  for (const l of lines) {
-    try { out.push((await gtx([l], sl, tl)).replace(/\n/g, ' ').trim()); } catch (_) { out.push(l); }
-  }
-  return out;
+
+  const mid = Math.floor(lines.length / 2);
+  const left = lines.slice(0, mid);
+  const right = lines.slice(mid);
+  const leftRes = await viaGtx(left, sl, tl, depth + 1);
+  const rightRes = await viaGtx(right, sl, tl, depth + 1);
+  return leftRes.concat(rightRes);
 }
 
 async function translate(lines, sl, tl, ctx) {
@@ -369,7 +501,7 @@ async function translate(lines, sl, tl, ctx) {
   if (enginePref === 'gemini' || enginePref === 'groq' || enginePref === 'google') {
     const [name, key, run, prov] = specs[enginePref];
     if (!key) throw new TranslateError([{ engine: name, code: 'nokey' }]);
-    if (name !== 'Google' && cooldown[name] && cooldown[name] > Date.now()) {
+    if (cooldown[name] && cooldown[name] > Date.now()) {
       throw new TranslateError([{ engine: name, code: cooldownCode[name] || 'unknown' }]);
     }
     chain.push([name, run, prov, key]);
@@ -381,14 +513,14 @@ async function translate(lines, sl, tl, ctx) {
 
   const issues = [];
   for (const [name, run, prov, key] of chain) {
-    if (name !== 'Google' && cooldown[name] && cooldown[name] > Date.now()) {
+    if (cooldown[name] && cooldown[name] > Date.now()) {
       issues.push({ engine: name, code: cooldownCode[name] || 'unknown' });
       continue;
     }
     try {
       let res;
       try { res = await run(); } catch (e) {
-        if (e instanceof HttpError && e.status < 500) throw e;
+        if (name === 'Google' || (e instanceof HttpError && e.status < 500)) throw e;
         if (e instanceof HttpError) await new Promise((ok) => setTimeout(ok, 1500));
         res = await run();
       }
@@ -396,8 +528,13 @@ async function translate(lines, sl, tl, ctx) {
       return { res, engine: name, issues, errors: issues.map((i) => i.engine + ': ' + i.code) };
     } catch (e) {
       const code = classifyError(e);
-      if (name !== 'Google') {
-        const st = e instanceof HttpError ? e.status : 0;
+      const st = e instanceof HttpError ? e.status : 0;
+      if (name === 'Google') {
+        if (code === 'quota' || code === 'server' || st === 429 || (st >= 500 && st < 600)) {
+          cooldown.Google = Date.now() + (config.gtxCooldownMs || 20000);
+          cooldownCode.Google = (code === 'quota' || st === 429) ? 'quota' : 'server';
+        }
+      } else {
         if (code === 'invalid' || st === 400 || st === 401 || st === 403) cooldown[name] = Date.now() + 10 * 60 * 1000;
         else if (code === 'quota') cooldown[name] = Date.now() + 60 * 1000;
         else cooldown[name] = Date.now() + 30 * 1000;
@@ -476,5 +613,6 @@ if (typeof module !== 'undefined') {
     translate, parseTranslations, cooldown, cooldownCode, config, HttpError, TranslateError,
     classifyError, classifyValidation, validateKey, handleMessage,
     systemPrompt, sanitizeMetaField, formatVideoContext, buildUserContent, hasContextData,
+    gtx, viaGtx, gtxQueue, GtxQueue,
   };
 }

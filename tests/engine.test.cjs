@@ -28,6 +28,7 @@ globalThis.fetch = async (url, opts) => {
 const {
   translate, cooldown, cooldownCode, config, TranslateError, validateKey, handleMessage,
   systemPrompt, sanitizeMetaField, formatVideoContext, buildUserContent, hasContextData,
+  gtx, viaGtx, gtxQueue, GtxQueue,
 } = require(require('path').join(__dirname, '../extension/background.js'));
 const geminiOK = (arr) => () => json(200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ translations: arr }) }] } }] });
 const groqOK = (arr) => () => json(200, { choices: [{ message: { content: JSON.stringify({ translations: arr }) } }] });
@@ -36,6 +37,10 @@ const reset = () => {
   calls = []; reqLog = []; storageWrites = []; plan = {}; syncStore = {};
   for (const k in cooldown) delete cooldown[k];
   for (const k in cooldownCode) delete cooldownCode[k];
+  config.gtxMinIntervalMs = 0;
+  config.sleep = () => Promise.resolve();
+  delete config.now;
+  if (gtxQueue && gtxQueue.clear) gtxQueue.clear();
 };
 
 (async () => {
@@ -420,5 +425,196 @@ const reset = () => {
   assert.ok(!emptyCtxSys.includes('<video_context>'));
   assert.ok(!emptyCtxSys.includes('"lines"'));
 
-  console.log('19/19 motor testi geçti');
+  // 20) GTX istek kuyruğu: en fazla 2 eşzamanlı istek (üst sınır) ve istekler arası minimum aralık (150 ms)
+  reset();
+  store = { engine: 'google' };
+  let inFlight = 0;
+  let maxInFlight = 0;
+  const dispatchTimes = [];
+  const sleepDelays = [];
+
+  // Enjekte edilen zamanlayıcı: testlerin beklemeden sanal zamanı ilerletmesini sağlar
+  let virtualTime = 1000;
+  config.now = () => virtualTime;
+  config.gtxMinIntervalMs = 150;
+  config.sleep = async (ms) => {
+    sleepDelays.push(ms);
+    virtualTime += ms;
+  };
+
+  plan['translate.googleapis.com'] = async () => {
+    inFlight++;
+    maxInFlight = Math.max(maxInFlight, inFlight);
+    dispatchTimes.push(virtualTime);
+    virtualTime += 50;
+    inFlight--;
+    return json(200, [[['cevap\n', 'req\n']]]);
+  };
+
+  await Promise.all([
+    gtx(['req1'], 'en', 'tr'),
+    gtx(['req2'], 'en', 'tr'),
+    gtx(['req3'], 'en', 'tr'),
+    gtx(['req4'], 'en', 'tr'),
+  ]);
+
+  assert.ok(maxInFlight <= 2, `Eşzamanlı istek sayısı üst sınırı 2 olmalı, ölçülen: ${maxInFlight}`);
+  assert.ok(sleepDelays.length > 0, 'İstekler arası aralık için zamanlayıcı (sleep) çağrılmış olmalı');
+  assert.ok(sleepDelays.every((d) => d >= 100), 'Gecikmeler en az minInterval kadar olmalı');
+  for (let i = 1; i < dispatchTimes.length; i++) {
+    assert.ok(
+      dispatchTimes[i] - dispatchTimes[i - 1] >= 150,
+      `İstekler arası en az 150 ms olmalı: ${dispatchTimes[i]} - ${dispatchTimes[i - 1]}`,
+    );
+  }
+
+  // 21) İkili bölme: istek sayısı üst sınırı (25 cümlelik parçada tek uyuşmazlıkta 3 istek; eski 26 yerine)
+  reset();
+  store = { engine: 'google' };
+  const lines25 = Array.from({ length: 25 }, (_, i) => `Sentence ${i}`);
+  const gtxRequests = [];
+
+  plan['translate.googleapis.com'] = (url, opts) => {
+    const q = new URLSearchParams(opts.body).get('q');
+    const qLines = q.split('\n');
+    gtxRequests.push(qLines.length);
+
+    if (qLines.length === 25) {
+      const resp = Array.from({ length: 24 }, (_, i) => [`T ${i}${i < 23 ? '\n' : ''}`, `Sentence ${i}`]);
+      return json(200, [resp]);
+    }
+    const resp = qLines.map((l) => [`TR ${l}\n`, `${l}\n`]);
+    return json(200, [resp]);
+  };
+
+  r = await translate(lines25, 'en', 'tr');
+  assert.equal(r.engine, 'Google');
+  assert.equal(r.res.length, 25);
+  assert.equal(gtxRequests.length, 3, '25 cümlelik parçada ikili bölme tam 3 istek yapmalı');
+  assert.deepEqual(gtxRequests, [25, 12, 13], 'Bölme sıralaması [25, 12, 13] olmalı');
+  assert.ok(gtxRequests.length <= 3, 'İstek sayısı üst sınırı aşılmamalı');
+
+  // 22) Bölme doğruluğu: sıra ve içerik korunur, tek satıra inince tek istek
+  reset();
+  store = { engine: 'google' };
+  const lines4 = ['A', 'B', 'C', 'D'];
+  const sentQueries = [];
+
+  plan['translate.googleapis.com'] = (url, opts) => {
+    const q = new URLSearchParams(opts.body).get('q');
+    sentQueries.push(q);
+    if (q === 'A\nB\nC\nD') {
+      return json(200, [[['birlesik 1\n', 'A\n'], ['birlesik 2', 'B']]]);
+    }
+    if (q === 'A\nB') {
+      return json(200, [[['Ceviri A\n', 'A\n'], ['Ceviri B', 'B']]]);
+    }
+    if (q === 'C\nD') {
+      return json(200, [[['birlesik CD', 'C']]]);
+    }
+    if (q === 'C') {
+      return json(200, [[['Ceviri C', 'C']]]);
+    }
+    if (q === 'D') {
+      return json(200, [[['Ceviri D', 'D']]]);
+    }
+    throw new Error('Beklenmeyen sorgu: ' + q);
+  };
+
+  r = await translate(lines4, 'en', 'tr');
+  assert.equal(r.engine, 'Google');
+  assert.deepEqual(
+    r.res,
+    ['Ceviri A', 'Ceviri B', 'Ceviri C', 'Ceviri D'],
+    'İkili bölme sonucunda tüm satırların sırası ve içeriği korunmalı',
+  );
+  assert.deepEqual(sentQueries, ['A\nB\nC\nD', 'A\nB', 'C\nD', 'C', 'D']);
+
+  // 23) HTTP 429 ve 5xx sonrası ~20 sn cooldown, yeni istek atılmaması ve parça içinde sonsuz deneme olmaması
+  reset();
+  store = { engine: 'google' };
+  let gtxFetchCount = 0;
+  plan['translate.googleapis.com'] = () => {
+    gtxFetchCount++;
+    return json(429, { error: 'Too Many Requests' });
+  };
+
+  const beforeTime = Date.now();
+  await assert.rejects(
+    () => translate(['one', 'two'], 'en', 'tr'),
+    (err) => {
+      assert.ok(err instanceof TranslateError);
+      assert.equal(err.code, 'quota');
+      return true;
+    },
+  );
+  assert.equal(gtxFetchCount, 1, '429 alındığında parça içinde sonsuz tekrar denenmemeli, tek istekte durmalı');
+  assert.ok(cooldown.Google >= beforeTime + 19000, 'Google için cooldown ~20 sn olmalı');
+  assert.ok(cooldown.Google <= Date.now() + 21000);
+  assert.equal(cooldownCode.Google, 'quota');
+
+  // Cooldown sürerken yeni çağrı: Google translate API'ye hiç HTTP isteği atılmadan hata dönmeli
+  const callsBefore = calls.length;
+  await assert.rejects(
+    () => translate(['another'], 'en', 'tr'),
+    (err) => {
+      assert.ok(err instanceof TranslateError);
+      assert.equal(err.code, 'quota');
+      return true;
+    },
+  );
+  assert.equal(calls.length, callsBefore, 'Cooldown aktifken translate.googleapis.com adresine yeni istek atılmamalı');
+
+  // 5xx sunucu hatası için cooldown testi (503 Service Unavailable)
+  reset();
+  store = { engine: 'google' };
+  let fetch503Count = 0;
+  plan['translate.googleapis.com'] = () => {
+    fetch503Count++;
+    return json(503, 'Service Unavailable');
+  };
+
+  const before503 = Date.now();
+  await assert.rejects(
+    () => translate(['server test'], 'en', 'tr'),
+    (err) => {
+      assert.ok(err instanceof TranslateError);
+      assert.equal(err.code, 'server');
+      return true;
+    },
+  );
+  assert.equal(fetch503Count, 1, '5xx hatasında sonsuz deneme yapılmamalı');
+  assert.ok(cooldown.Google >= before503 + 19000, '5xx hatasında cooldown ~20 sn olmalı');
+  assert.equal(cooldownCode.Google, 'server');
+
+  // Cooldown süresince 5xx için de yeni istek atılmamalı
+  const calls503Before = calls.length;
+  await assert.rejects(
+    () => translate(['after 503'], 'en', 'tr'),
+    (err) => {
+      assert.ok(err instanceof TranslateError);
+      assert.equal(err.code, 'server');
+      return true;
+    },
+  );
+  assert.equal(calls.length, calls503Before, '5xx cooldown süresince yeni istek atılmamalı');
+
+  // 24) auto modunda Google cooldown sürerken Google'a istek atılmadan hata dönmesi
+  reset();
+  store = { engine: 'auto' };
+  cooldown.Google = Date.now() + 15000;
+  cooldownCode.Google = 'quota';
+  calls = [];
+  await assert.rejects(
+    () => translate(['auto test'], 'en', 'tr'),
+    (err) => {
+      assert.ok(err instanceof TranslateError);
+      assert.equal(err.code, 'quota');
+      assert.deepEqual(err.issues, [{ engine: 'Google', code: 'quota' }]);
+      return true;
+    },
+  );
+  assert.equal(calls.length, 0, 'auto modunda cooldown sürerken hiçbir ağ isteği atılmamalı');
+
+  console.log('24/24 motor testi geçti');
 })().catch((e) => { console.error('BAŞARISIZ:', e.message); process.exit(1); });

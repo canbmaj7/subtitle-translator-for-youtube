@@ -97,10 +97,13 @@ node tests/ui.test.cjs          # UI state, badge mapping, appearance clamping, 
 node tests/scheduler.test.cjs   # Chunking and neighbouring-sentence context
 node tests/cache.test.cjs       # Translation cache: keys, LRU eviction, engine quality rules
 node tests/e2e.cjs              # Real extension in a mock YouTube page (needs Playwright + Chromium)
+node scripts/canary.cjs         # Live YouTube contract check (DOM markers, timedtext, extension button)
 node scripts/check-store.cjs    # Manifest, icons, permissions, secrets, and store hygiene
 bash scripts/package.sh         # Package for Chrome/Edge (dist/subtitle-translator-<version>.zip)
 node scripts/build-firefox.cjs  # Package for Firefox (dist/subtitle-translator-<version>-firefox.zip)
 ```
+
+CI runs unit tests, store checks, and mock E2E on every push and pull request. A scheduled daily canary workflow runs `node scripts/canary.cjs` against live YouTube to detect upstream DOM or caption API breakages, opening an issue if any contract assumption fails.
 
 Browser testing is conducted with Playwright Chromium using the `--load-extension` flag (standard official Chrome 137+ ignores this flag in automated environments). When making code changes, click the refresh icon on `chrome://extensions` and reload the active YouTube tab.
 
