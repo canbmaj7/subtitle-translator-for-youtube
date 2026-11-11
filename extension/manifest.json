@@ -36,6 +36,7 @@
         "sentences.js",
         "scheduler.js",
         "wait.js",
+        "ui-pages.js",
         "ui.js",
         "content.js"
       ],

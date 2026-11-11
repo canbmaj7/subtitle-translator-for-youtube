@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "btnTitle": {
-    "message": "$LANG$ çevirisi — tık: ayarlar ve aç/kapa · Shift+tık: hızlı aç/kapa",
+    "message": "$LANG$ çevirisi — Sol tık: ayarlar · Sağ tık / Shift+tık: hızlı aç/kapa",
     "description": "Tooltip for player button",
     "placeholders": {
       "lang": {
@@ -186,5 +186,125 @@
   "noteSameLang": {
     "message": "Videonun altyazısı zaten hedef dilde, çevrilecek bir şey yok.",
     "description": "Panel note"
+  },
+  "toastTranslationOn": {
+    "message": "Çeviri açık",
+    "description": "Toast when translation is enabled"
+  },
+  "toastTranslationOff": {
+    "message": "Çeviri kapalı",
+    "description": "Toast when translation is disabled"
+  },
+  "btnBack": {
+    "message": "Geri",
+    "description": "Back button in subpages"
+  },
+  "navLanguage": {
+    "message": "Dil",
+    "description": "Language subpage row"
+  },
+  "navEngine": {
+    "message": "Çeviri motoru",
+    "description": "Translation engine subpage row"
+  },
+  "navTranscript": {
+    "message": "Transkript",
+    "description": "Transcript subpage row"
+  },
+  "navAppearance": {
+    "message": "Görünüm",
+    "description": "Appearance subpage row"
+  },
+  "navAdvanced": {
+    "message": "Gelişmiş",
+    "description": "Advanced subpage row"
+  },
+  "comingSoon": {
+    "message": "Yakında",
+    "description": "Placeholder text for upcoming features"
+  },
+  "engineAuto": {
+    "message": "Otomatik",
+    "description": "Automatic engine option"
+  },
+  "engineGoogle": {
+    "message": "Google",
+    "description": "Google engine option"
+  },
+  "engineGemini": {
+    "message": "Gemini",
+    "description": "Gemini engine option"
+  },
+  "engineGroq": {
+    "message": "Groq",
+    "description": "Groq engine option"
+  },
+  "keyStatusValid": {
+    "message": "Doğrulandı",
+    "description": "Key status badge when valid"
+  },
+  "keyStatusInvalid": {
+    "message": "Geçersiz",
+    "description": "Key status badge when invalid"
+  },
+  "keyStatusQuota": {
+    "message": "Kota doldu",
+    "description": "Key status badge when quota exceeded"
+  },
+  "keyStatusNetwork": {
+    "message": "Ağ hatası",
+    "description": "Key status badge on network error"
+  },
+  "keyStatusUnchecked": {
+    "message": "Denenmedi",
+    "description": "Key status badge when unchecked"
+  },
+  "keyStatusMissing": {
+    "message": "Anahtar ekle",
+    "description": "Plain text prompt when key is missing"
+  },
+  "keyAddInfo": {
+    "message": "Anahtarı eklenti simgesindeki (araç çubuğu) pencereden gir",
+    "description": "Instruction shown when clicking Add key"
+  },
+  "issueNokey": {
+    "message": "Seçili motor için API anahtarı eklenmemiş.",
+    "description": "Error message for nokey code"
+  },
+  "issueInvalid": {
+    "message": "API anahtarı geçersiz veya reddedildi.",
+    "description": "Error message for invalid code"
+  },
+  "issueQuota": {
+    "message": "İstek sınırı (kota) doldu, lütfen biraz bekleyin.",
+    "description": "Error message for quota code"
+  },
+  "issueNetwork": {
+    "message": "Ağ bağlantısı kurulamadı.",
+    "description": "Error message for network code"
+  },
+  "issueTimeout": {
+    "message": "Çeviri isteği zaman aşımına uğradı.",
+    "description": "Error message for timeout code"
+  },
+  "issueServer": {
+    "message": "Çeviri sunucusu geçici olarak yanıt vermiyor.",
+    "description": "Error message for server code"
+  },
+  "issueMismatch": {
+    "message": "Model yanıtı altyazı satırlarıyla eşleşmedi.",
+    "description": "Error message for mismatch code"
+  },
+  "issueUnknown": {
+    "message": "Beklenmeyen bir çeviri hatası oluştu.",
+    "description": "Error message for unknown code"
+  },
+  "rowVersion": {
+    "message": "Sürüm",
+    "description": "Version label in advanced page"
+  },
+  "rowRepoPrivacy": {
+    "message": "Kaynak kodu ve gizlilik",
+    "description": "Repository and privacy link label"
   }
 }

@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "btnTitle": {
-    "message": "$LANG$ translation — click: settings & on/off · Shift+click: quick on/off",
+    "message": "$LANG$ translation — Left click: settings · Right click / Shift+click: quick on/off",
     "description": "Tooltip for player button",
     "placeholders": {
       "lang": {
@@ -186,5 +186,125 @@
   "noteSameLang": {
     "message": "The video's captions are already in the target language, so there is nothing to translate.",
     "description": "Panel note"
+  },
+  "toastTranslationOn": {
+    "message": "Translation on",
+    "description": "Toast when translation is enabled"
+  },
+  "toastTranslationOff": {
+    "message": "Translation off",
+    "description": "Toast when translation is disabled"
+  },
+  "btnBack": {
+    "message": "Back",
+    "description": "Back button in subpages"
+  },
+  "navLanguage": {
+    "message": "Language",
+    "description": "Language subpage row"
+  },
+  "navEngine": {
+    "message": "Translation engine",
+    "description": "Translation engine subpage row"
+  },
+  "navTranscript": {
+    "message": "Transcript",
+    "description": "Transcript subpage row"
+  },
+  "navAppearance": {
+    "message": "Appearance",
+    "description": "Appearance subpage row"
+  },
+  "navAdvanced": {
+    "message": "Advanced",
+    "description": "Advanced subpage row"
+  },
+  "comingSoon": {
+    "message": "Coming soon",
+    "description": "Placeholder text for upcoming features"
+  },
+  "engineAuto": {
+    "message": "Automatic",
+    "description": "Automatic engine option"
+  },
+  "engineGoogle": {
+    "message": "Google",
+    "description": "Google engine option"
+  },
+  "engineGemini": {
+    "message": "Gemini",
+    "description": "Gemini engine option"
+  },
+  "engineGroq": {
+    "message": "Groq",
+    "description": "Groq engine option"
+  },
+  "keyStatusValid": {
+    "message": "Verified",
+    "description": "Key status badge when valid"
+  },
+  "keyStatusInvalid": {
+    "message": "Invalid",
+    "description": "Key status badge when invalid"
+  },
+  "keyStatusQuota": {
+    "message": "Quota exceeded",
+    "description": "Key status badge when quota exceeded"
+  },
+  "keyStatusNetwork": {
+    "message": "Network error",
+    "description": "Key status badge on network error"
+  },
+  "keyStatusUnchecked": {
+    "message": "Unchecked",
+    "description": "Key status badge when unchecked"
+  },
+  "keyStatusMissing": {
+    "message": "Add key",
+    "description": "Plain text prompt when key is missing"
+  },
+  "keyAddInfo": {
+    "message": "Enter your API key in the extension popup from the toolbar icon",
+    "description": "Instruction shown when clicking Add key"
+  },
+  "issueNokey": {
+    "message": "No API key added for the selected engine.",
+    "description": "Error message for nokey code"
+  },
+  "issueInvalid": {
+    "message": "API key is invalid or rejected.",
+    "description": "Error message for invalid code"
+  },
+  "issueQuota": {
+    "message": "Rate limit or quota exceeded, please wait a moment.",
+    "description": "Error message for quota code"
+  },
+  "issueNetwork": {
+    "message": "Network connection failed.",
+    "description": "Error message for network code"
+  },
+  "issueTimeout": {
+    "message": "Translation request timed out.",
+    "description": "Error message for timeout code"
+  },
+  "issueServer": {
+    "message": "Translation server is temporarily unavailable.",
+    "description": "Error message for server code"
+  },
+  "issueMismatch": {
+    "message": "Model response did not match subtitle lines.",
+    "description": "Error message for mismatch code"
+  },
+  "issueUnknown": {
+    "message": "An unexpected translation error occurred.",
+    "description": "Error message for unknown code"
+  },
+  "rowVersion": {
+    "message": "Version",
+    "description": "Version label in advanced page"
+  },
+  "rowRepoPrivacy": {
+    "message": "Source code & privacy",
+    "description": "Repository and privacy link label"
   }
 }

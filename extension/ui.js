@@ -1,33 +1,25 @@
-// Oynatıcı kontrol çubuğuna düğme ve ayar paneli ekler.
+// Oynatıcı kontrol çubuğuna düğme, bildirim ve dişli menü tarzı ayar paneli ekler.
 (() => {
   const ns = (globalThis.YTR = globalThis.YTR || {});
   const SVGNS = 'http://www.w3.org/2000/svg';
   let getSettings = () => ({}), setSetting = () => {};
-  let btn = null, panel = null, refs = {};
+  let btn = null, panel = null, toast = null, toastTimer = 0;
+  let pagesMap = {}, refreshPagesFn = null, currentPage = 'main';
+  const refs = {};
+  const localState = { keyStatus: {}, lastIssues: [], engine: '' };
+  let syncEngine = '';
 
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
-    if (text) e.textContent = text;
+    if (text != null && text !== '') e.textContent = text;
     return e;
   };
-
-  // Açma/kapama anahtarı (toggle switch) oluşturur
-  function makeSwitch(onChange) {
-    const label = el('label', 'ytr-switch');
-    const input = el('input');
-    input.type = 'checkbox';
-    const slider = el('span', 'ytr-switch-slider');
-    label.append(input, slider);
-    if (onChange) input.addEventListener('change', onChange);
-    return { label, input };
-  }
 
   function makeIcon() {
     const svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('viewBox', '0 0 36 36');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
+    svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
     const r = document.createElementNS(SVGNS, 'rect');
     for (const [k, v] of Object.entries({ x: 7, y: 10, width: 22, height: 16, rx: 3, fill: 'none', stroke: 'currentColor', 'stroke-width': 2 })) r.setAttribute(k, v);
     const t = document.createElementNS(SVGNS, 'text');
@@ -39,128 +31,136 @@
   }
 
   function getTargetName(target) {
-    let name = target;
     try {
       const loc = (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()) || 'en';
-      const dn = new Intl.DisplayNames([loc], { type: 'language' });
-      name = dn.of(target) || target;
-    } catch (_) {}
-    return name;
+      return new Intl.DisplayNames([loc], { type: 'language' }).of(target) || target;
+    } catch (_) { return target; }
+  }
+
+  function showToast(text) {
+    const player = document.getElementById('movie_player');
+    if (!player) return;
+    if (!toast) {
+      toast = el('div', 'ytr-toast');
+      toast.setAttribute('role', 'status'); toast.setAttribute('aria-live', 'polite');
+      toast.hidden = true;
+    }
+    if (toast.parentElement !== player) player.appendChild(toast);
+    toast.textContent = text;
+    toast.hidden = false;
+    toast.classList.add('ytr-toast-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      if (toast) { toast.classList.remove('ytr-toast-on'); toast.hidden = true; }
+    }, 1500);
+  }
+
+  function quickToggleEnabled() {
+    const next = !getSettings().enabled;
+    setSetting('enabled', next);
+    showToast(ns.t(next ? 'toastTranslationOn' : 'toastTranslationOff'));
   }
 
   function makeButton() {
     const b = el('button', 'ytp-button ytr-btn');
-    b.type = 'button'; b.setAttribute('aria-expanded', 'false');
+    b.type = 'button';
+    b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-haspopup', 'menu');
     b.appendChild(makeIcon());
-    b.addEventListener('click', (e) => { e.stopPropagation(); e.shiftKey ? setSetting('enabled', !getSettings().enabled) : togglePanel(); });
-    b.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); togglePanel(); });
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (e.shiftKey) quickToggleEnabled(); else togglePanel();
+    });
+    b.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      quickToggleEnabled();
+    });
     return b;
   }
 
-  function row(labelText, input) {
-    const r = el('div', 'ytr-row');
-    const l = el('span', 'ytr-row-label', labelText);
-    r.append(l, input);
-    return r;
+  function getActiveMenuItems() {
+    const pg = pagesMap[currentPage];
+    return pg ? Array.from(pg.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]')) : [];
   }
 
-  function rowWithDesc(labelText, descText, input) {
-    const r = el('div', 'ytr-row');
-    const w = el('div', 'ytr-row-text');
-    w.append(el('span', 'ytr-row-label', labelText), el('span', 'ytr-row-sub', descText));
-    r.append(w, input);
-    return r;
+  function showPage(pageId) {
+    const prev = currentPage;
+    currentPage = pagesMap[pageId] ? pageId : 'main';
+    for (const [k, node] of Object.entries(pagesMap)) node.hidden = (k !== currentPage);
+    if (!panel || panel.hidden) return;
+    const items = getActiveMenuItems();
+    if (!items.length) return;
+    let toFocus = items[0];
+    if (currentPage === 'main' && prev !== 'main') {
+      const trigger = items.find((i) => i.dataset && i.dataset.subpage === prev);
+      if (trigger) toFocus = trigger;
+    }
+    toFocus.focus();
+  }
+
+  function onPanelKeyDown(e) {
+    e.stopPropagation();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (currentPage !== 'main') showPage('main');
+      else { togglePanel(false); if (btn) btn.focus(); }
+      return;
+    }
+    const items = getActiveMenuItems();
+    if (!items.length) return;
+    const idx = items.indexOf(document.activeElement);
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const delta = e.key === 'ArrowDown' ? 1 : -1;
+      const target = items[(idx + delta + items.length) % items.length];
+      target.focus();
+      if (target.scrollIntoView) target.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Home') {
+      e.preventDefault(); items[0].focus();
+    } else if (e.key === 'End') {
+      e.preventDefault(); items[items.length - 1].focus();
+    } else if (e.key === 'ArrowRight' && idx >= 0 && items[idx].dataset && items[idx].dataset.subpage) {
+      e.preventDefault(); showPage(items[idx].dataset.subpage);
+    } else if (e.key === 'ArrowLeft' && currentPage !== 'main') {
+      e.preventDefault(); showPage('main');
+    } else if ((e.key === 'Enter' || e.key === ' ') && idx >= 0) {
+      if (items[idx].tagName === 'A' && e.key === 'Enter') return;
+      e.preventDefault(); items[idx].click();
+    }
   }
 
   function makePanel() {
     const p = el('div', 'ytr-panel');
+    p.setAttribute('role', 'menu');
+    p.setAttribute('aria-label', ns.t('panelTitle'));
     p.hidden = true;
 
-    // Başlık ve motor etiketi
-    const header = el('div', 'ytr-header');
-    const title = el('div', 'ytr-title', ns.t('panelTitle'));
-    const chip = el('div', 'ytr-chip');
-    const chipDot = el('span', 'ytr-chip-dot');
-    const chipText = el('span', 'ytr-chip-text', ns.t('chipIdle'));
-    chip.append(chipDot, chipText);
-    header.append(title, chip);
-
-    // İlerleme satırı
-    const progBox = el('div', 'ytr-progress-box');
-    progBox.hidden = true;
-    const progRow = el('div', 'ytr-progress-row');
-    const progText = el('span', 'ytr-progress-text');
-    const retryBtn = el('button', 'ytr-retry-btn', ns.t('btnRetry'));
-    retryBtn.type = 'button';
-    retryBtn.hidden = true;
-    retryBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (ns.retryFailed) ns.retryFailed();
+    const built = ns.pages.build({
+      getSettings,
+      setSetting: (k, v) => { if (k === 'engine') syncEngine = v; setSetting(k, v); refresh(); },
+      getLocalState: () => localState,
+      showPage,
+      getTargetName,
+      refs,
     });
-    progRow.append(progText, retryBtn);
-    const progBar = el('div', 'ytr-progress-bar');
-    const progFill = el('div', 'ytr-progress-fill');
-    progBar.append(progFill);
-    progBox.append(progRow, progBar);
+    pagesMap = built.pages;
+    refreshPagesFn = built.refreshPages;
+    for (const node of Object.values(pagesMap)) p.appendChild(node);
 
-    // Çeviri aç/kapa
-    const swEnabled = makeSwitch(() => setSetting('enabled', swEnabled.input.checked));
-    const rEnabled = row(ns.t('rowTranslation'), swEnabled.label);
-
-    // Hedef dil seçimi
-    const select = el('select', 'ytr-select');
-    const langs = ns.LANGS || ['tr', 'en'];
-    for (const code of langs) {
-      const opt = el('option', null, ns.langLabel ? ns.langLabel(code) : code);
-      opt.value = code;
-      select.appendChild(opt);
-    }
-    select.addEventListener('change', () => setSetting('target', select.value));
-
-    // Orijinal metni göster
-    const swOrig = makeSwitch(() => setSetting('showOriginal', swOrig.input.checked));
-    const rOrig = row(ns.t('rowShowOriginal'), swOrig.label);
-
-    // Çeviri gelene kadar bekle
-    const swWait = makeSwitch(() => setSetting('waitForTranslation', swWait.input.checked));
-    const rWait = rowWithDesc(ns.t('rowWaitForTranslation'), ns.t('descWaitForTranslation'), swWait.label);
-
-    // Yazı boyutu
-    const size = el('input', 'ytr-range');
-    size.type = 'range'; size.min = 60; size.max = 200; size.step = 10;
-    const sizeVal = el('span', 'ytr-val');
-    const sizeWrap = el('div', 'ytr-sizewrap');
-    sizeWrap.append(size, sizeVal);
-    size.addEventListener('input', () => setSetting('size', Number(size.value)));
-    const rSize = row(ns.t('rowFontSize'), sizeWrap);
-
-    // Durum ve ipucu kutusu
-    const statusBox = el('div', 'ytr-status-box');
-    const status = el('div', 'ytr-status', ns.t('statusEngineNone'));
-    const hint = el('div', 'ytr-hint', ns.t('googleKeyHint'));
-    hint.hidden = true;
-    const note = el('div', 'ytr-note');
-    note.hidden = true;
-    statusBox.append(note, status, hint);
-
-    p.append(header, progBox, rEnabled, row(ns.t('rowTargetLang'), select), rOrig, rWait, rSize, statusBox);
-
-    // Panel içi etkileşimlerin oynatıcıya sızmasını engelle
-    for (const ev of ['click', 'dblclick', 'mousedown', 'mouseup', 'keydown', 'keyup', 'keypress', 'contextmenu', 'wheel', 'pointerdown', 'pointerup']) {
+    p.addEventListener('keydown', onPanelKeyDown);
+    for (const ev of ['click', 'dblclick', 'mousedown', 'mouseup', 'keyup', 'keypress', 'contextmenu', 'wheel', 'pointerdown', 'pointerup']) {
       p.addEventListener(ev, (e) => e.stopPropagation());
     }
-
-    Object.assign(refs, {
-      enabled: swEnabled.input, orig: swOrig.input, wait: swWait.input, target: select,
-      size, sizeVal, status, hint, note, chip, chipText, progBox, progText, progFill, retryBtn,
-    });
     return p;
   }
 
   function togglePanel(force) {
     if (!panel) return;
-    panel.hidden = typeof force === 'boolean' ? !force : !panel.hidden;
-    if (btn) btn.setAttribute('aria-expanded', String(!panel.hidden));
+    const willOpen = typeof force === 'boolean' ? force : panel.hidden;
+    panel.hidden = !willOpen;
+    if (btn) btn.setAttribute('aria-expanded', String(willOpen));
+    if (willOpen) { showPage('main'); refresh(); }
   }
 
   function ensure() {
@@ -186,45 +186,60 @@
   }
 
   function refresh() {
-    const s = getSettings();
+    const s = getSettings() || {};
     const target = s.target || (ns.defaultTarget ? ns.defaultTarget() : 'en');
     const langCode = target.split('-')[0].toUpperCase();
     const targetName = getTargetName(target);
+    const enginePref = String(s.engine || syncEngine || localState.engine || 'auto').toLowerCase();
 
     if (refs.btnText) refs.btnText.textContent = langCode;
-
     if (btn) {
-      btn.classList.toggle('ytr-on', !!s.enabled);
+      const on = !!s.enabled;
+      btn.classList.toggle('ytr-on', on);
+      btn.classList.toggle('ytr-off', !on);
       btn.title = ns.t('btnTitle', [targetName]);
       btn.setAttribute('aria-label', ns.t('btnAriaLabel', [targetName]));
       if (panel) btn.setAttribute('aria-expanded', String(!panel.hidden));
     }
+    if (refreshPagesFn) refreshPagesFn(target, enginePref);
+  }
 
-    if (!refs.enabled) return;
-    refs.enabled.checked = !!s.enabled;
-    refs.orig.checked = !!s.showOriginal;
-    if (refs.wait) refs.wait.checked = !!s.waitForTranslation;
-    if (refs.target && refs.target.value !== target) refs.target.value = target;
-    refs.size.value = s.size != null ? s.size : 100;
-    refs.sizeVal.textContent = (s.size != null ? s.size : 100) + '%';
+  function bindStorage() {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    if (chrome.storage.local && chrome.storage.local.get) {
+      chrome.storage.local.get({ keyStatus: {}, lastIssues: [], engine: '' }, (d) => { if (d) Object.assign(localState, d); refresh(); });
+    }
+    if (chrome.storage.sync && chrome.storage.sync.get) {
+      chrome.storage.sync.get({ engine: '' }, (s) => { if (s && s.engine) syncEngine = s.engine; refresh(); });
+    }
+    if (chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((ch, area) => {
+        if (area === 'local') {
+          if (ch.keyStatus) localState.keyStatus = ch.keyStatus.newValue || {};
+          if (ch.lastIssues) localState.lastIssues = ch.lastIssues.newValue || [];
+          if (ch.engine) localState.engine = ch.engine.newValue || '';
+          refresh();
+        } else if (area === 'sync' && ch.engine) {
+          syncEngine = ch.engine.newValue || '';
+          refresh();
+        }
+      });
+    }
   }
 
   ns.initUI = (getS, setS) => {
     getSettings = getS; setSetting = setS;
-    setInterval(ensure, 1000); // YouTube kontrolleri yeniden çizebilir
+    bindStorage();
+    setInterval(ensure, 1000);
     ensure();
-    // Panelin dışına tıklayınca kapat
     document.addEventListener('click', (e) => {
-      if (panel && !panel.hidden && !panel.contains(e.target) && !(btn && btn.contains(e.target))) {
-        togglePanel(false);
-      }
+      if (panel && !panel.hidden && !panel.contains(e.target) && !(btn && btn.contains(e.target))) togglePanel(false);
     }, true);
-    // Esc ile paneli kapat (oynatıcıya sızmasını engelle)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && panel && !panel.hidden) {
-        e.preventDefault();
-        e.stopPropagation();
-        togglePanel(false);
+        e.preventDefault(); e.stopPropagation();
+        if (currentPage !== 'main') showPage('main');
+        else { togglePanel(false); if (btn) btn.focus(); }
       }
     }, true);
   };
@@ -244,8 +259,7 @@
     else if (p.failed > 0) refs.progText.textContent = ns.t('progressFailed', [String(p.failed)]);
     else if (p.done === p.total) refs.progText.textContent = ns.t('progressReady');
     else refs.progText.textContent = ns.t('progressTranslating', [String(p.done), String(p.total)]);
-    const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
-    refs.progFill.style.width = pct + '%';
+    refs.progFill.style.width = (p.total > 0 ? Math.round((p.done / p.total) * 100) : 0) + '%';
     refs.retryBtn.hidden = !(p.failed > 0);
   };
 
@@ -257,18 +271,16 @@
     refs.note.textContent = key ? ns.t(key) : '';
   };
 
-  let pendingStatus = null; // panel oluşmadan gelen bilgiyi sakla
+  let pendingStatus = null;
   ns.setStatus = (engine, error) => {
     pendingStatus = [engine, error];
     if (!refs.status) return;
-
     if (refs.chip && refs.chipText) {
       refs.chip.className = 'ytr-chip';
       if (engine) { refs.chip.classList.add('ytr-engine-' + engine.toLowerCase()); refs.chipText.textContent = engine; }
       else if (error) { refs.chip.classList.add('ytr-engine-error'); refs.chipText.textContent = '!'; }
-      else { refs.chipText.textContent = ns.t('chipIdle'); }
+      else refs.chipText.textContent = ns.t('chipIdle');
     }
-
     if (engine) {
       refs.status.textContent = ns.t('statusEngine', [engine]);
       if (refs.hint) refs.hint.hidden = (engine !== 'Google');
