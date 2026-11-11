@@ -1056,5 +1056,295 @@ const reset = () => {
     assert.equal(syncStore.enabled, false, 'İlgisiz komut syncStore.enabled değerini değiştirmemeli');
   }
 
-  console.log('29/29 motor testi geçti');
+  const {
+    sanitizeGlossary, formatGlossary, glossaryVariant,
+    isValidVideoId, getVideoSummary, putVideoSummary,
+    summarizeVideo,
+  } = require(require('path').join(__dirname, '../extension/background.js'));
+
+  // 30) (1) summarize: model JSON döndürünce özet ayrıştırılır, <> ve kontrol karakterleri temizlenir, ≤400 karakter; ikinci çağrıda ağ isteği YOK (önbellek)
+  {
+    reset();
+    const VALID_VID = 'AbCdEf12345';
+    store = { geminiKey: 'gem-summary-key', engine: 'gemini' };
+
+    // Model yanıtında <script>, <tag>, kontrol karakterleri (\u0000, \u001f, \u0008, \u0007) ve 400 sınırı için uzun alanlar bulunur
+    const rawModelJson = {
+      topic: '<script>Kuantum\u0000 Programlama</script> ' + 'A'.repeat(250),
+      domain: 'Bilim\u001f & <Fizik>',
+      tone: 'Teknik\u0008 ve <Eğitici>',
+      terms: ['<Qubit>', 'Süperpozisyon\u0007', '<Dolanıklık>', 'B'.repeat(80)],
+    };
+
+    plan['generativelanguage.googleapis.com'] = () => json(200, {
+      candidates: [{
+        content: {
+          parts: [{ text: JSON.stringify(rawModelJson) }],
+        },
+      }],
+    });
+
+    const res1 = await summarizeVideo(VALID_VID, { title: '<Video Başlığı>' }, ['<İlk altyazı satırı>']);
+    assert.equal(res1.ok, true);
+    assert.ok(typeof res1.summary === 'string');
+    assert.ok(res1.summary.length > 0);
+    assert.ok(res1.summary.length <= 400, 'Özet uzunluğu en fazla 400 karakter olmalı');
+    assert.ok(!res1.summary.includes('<'), 'Özet içinde < karakteri kalmamalı');
+    assert.ok(!res1.summary.includes('>'), 'Özet içinde > karakteri kalmamalı');
+    assert.ok(!/[\u0000-\u001f\u007f-\u009f]/.test(res1.summary), 'Özet içinde kontrol karakteri kalmamalı');
+    assert.ok(res1.summary.includes('Topic:'));
+    assert.ok(res1.summary.includes('Domain: Bilim & Fizik'));
+    assert.ok(res1.summary.includes('Tone: Teknik ve Eğitici'));
+    assert.ok(res1.summary.includes('Terms: Qubit, Süperpozisyon, Dolanıklık'));
+
+    // İlk çağrıda ağ isteği yapıldı
+    const initialCalls = calls.length;
+    assert.equal(initialCalls, 1);
+    assert.equal(calls[0], 'generativelanguage.googleapis.com');
+
+    // İkinci çağrıda ağ isteği YOK (önbellek)
+    const res2 = await summarizeVideo(VALID_VID, { title: 'Farklı Başlık' }, ['Farklı satır']);
+    assert.equal(res2.ok, true);
+    assert.equal(res2.summary, res1.summary);
+    assert.equal(calls.length, initialCalls, 'İkinci çağrıda ağ isteği yapılmamalı');
+
+    // handleMessage üzerinden 'summarize' mesajında da önbellek kullanımı
+    const hmSumResp = await new Promise((resolve) => {
+      handleMessage({ type: 'summarize', videoId: VALID_VID }, {}, resolve);
+    });
+    assert.equal(hmSumResp.ok, true);
+    assert.equal(hmSumResp.summary, res1.summary);
+    assert.equal(calls.length, initialCalls, 'handleMessage summarize için de ağ isteği yapılmamalı');
+  }
+
+  // 31) (2) Google'a asla istek gitmez; anahtar yoksa {ok:false, code:'nokey'}; geçersiz videoId önbelleğe yazılmaz
+  {
+    // a) engine='google' seçilince Google'a istek gitmez, doğrudan {ok:false, code:'nokey'} döner
+    reset();
+    store = { engine: 'google' };
+    plan['translate.googleapis.com'] = gtxOK;
+    const gRes = await summarizeVideo('ValidId12345', { title: 'Test' }, ['Sample']);
+    assert.deepEqual(gRes, { ok: false, code: 'nokey' });
+    assert.equal(calls.length, 0, 'Google summarize için asla çağrılmamalı');
+
+    // b) Hiçbir anahtar yoksa {ok:false, code:'nokey'}
+    reset();
+    store = {};
+    const noKeyRes = await summarizeVideo('ValidId12345', { title: 'Test' }, ['Sample']);
+    assert.deepEqual(noKeyRes, { ok: false, code: 'nokey' });
+    assert.equal(calls.length, 0);
+
+    // c) engine='gemini' ama anahtar yoksa {ok:false, code:'nokey'}
+    reset();
+    store = { engine: 'gemini', geminiKey: '   ' };
+    const noGemKeyRes = await summarizeVideo('ValidId12345', { title: 'Test' }, ['Sample']);
+    assert.deepEqual(noGemKeyRes, { ok: false, code: 'nokey' });
+    assert.equal(calls.length, 0);
+
+    // d) engine='groq' ama anahtar yoksa {ok:false, code:'nokey'}
+    reset();
+    store = { engine: 'groq', groqKey: '' };
+    const noGroqKeyRes = await summarizeVideo('ValidId12345', { title: 'Test' }, ['Sample']);
+    assert.deepEqual(noGroqKeyRes, { ok: false, code: 'nokey' });
+    assert.equal(calls.length, 0);
+
+    // e) engine='custom' ama anahtar yoksa {ok:false, code:'nokey'}
+    reset();
+    store = { engine: 'custom', customKey: '', customEndpoint: 'https://example.com' };
+    const noCustKeyRes = await summarizeVideo('ValidId12345', { title: 'Test' }, ['Sample']);
+    assert.deepEqual(noCustKeyRes, { ok: false, code: 'nokey' });
+    assert.equal(calls.length, 0);
+
+    // f) Geçersiz videoId önbelleğe yazılmaz
+    reset();
+    store = { geminiKey: 'gem-key', engine: 'gemini' };
+    plan['generativelanguage.googleapis.com'] = () => json(200, {
+      candidates: [{
+        content: {
+          parts: [{ text: JSON.stringify({ topic: 'T', domain: 'D', tone: 'S', terms: [] }) }],
+        },
+      }],
+    });
+
+    const INVALID_IDS = ['', 'short', 'id with spaces', 'invalid*chars!', 'waytoolongvideoidbeyondtwenty', null, undefined];
+    for (const invId of INVALID_IDS) {
+      assert.equal(isValidVideoId(invId), false, `isValidVideoId(${invId}) false olmalı`);
+      assert.equal(await getVideoSummary(invId), null, `getVideoSummary(${invId}) null olmalı`);
+      await putVideoSummary(invId, 'Summary to ignore');
+      if (invId) {
+        assert.equal(store['vs1:' + invId], undefined, `store['vs1:${invId}'] boş kalmalı`);
+      }
+    }
+
+    // Geçersiz videoId ile summarizeVideo başarılı yanıt döner fakat önbelleğe yazılmaz
+    calls = [];
+    const invRes1 = await summarizeVideo('short', { title: 'Test' }, ['Sample']);
+    assert.equal(invRes1.ok, true);
+    assert.equal(store['vs1:short'], undefined, 'Geçersiz videoId önbelleğe yazılmamalı');
+    assert.equal(await getVideoSummary('short'), null);
+    assert.equal(calls.length, 1);
+
+    // İkinci çağrıda önbellek bulunamadığı için tekrar ağ isteği gider
+    const invRes2 = await summarizeVideo('short', { title: 'Test' }, ['Sample']);
+    assert.equal(invRes2.ok, true);
+    assert.equal(calls.length, 2, 'Önbelleğe yazılmadığı için tekrar ağ isteği gitmeli');
+    assert.ok(!calls.includes('translate.googleapis.com'), 'Google asla çağrılmamalı');
+  }
+
+  // 32) (3) sözlük: istemde <glossary> görünür, 'keep untranslated' ve 'translate as' satırları doğru, <> karakterleri temizlenir, 50 kayıt sınırı, sözlük boşken blok yok
+  {
+    reset();
+
+    // a) İstemde <glossary> görünür; keep untranslated ve translate as satırları doğru; <> temizlenir
+    const glossaryItems = [
+      { src: '<Kubernetes>', dst: '' },
+      { src: '<FastAPI>', dst: '<HızlıAPI>' },
+      { src: 'Prompt Engineering\u0000', dst: 'İstem Mühendisliği\u001f' },
+      { src: 'LLM' },
+    ];
+    const promptWithGlossary = systemPrompt('en', 'tr', null, glossaryItems);
+    assert.ok(promptWithGlossary.includes('<glossary>'));
+    assert.ok(promptWithGlossary.includes('</glossary>'));
+    assert.ok(promptWithGlossary.includes('Keep "Kubernetes" untranslated'));
+    assert.ok(promptWithGlossary.includes('Always translate "FastAPI" as "HızlıAPI"'));
+    assert.ok(promptWithGlossary.includes('Always translate "Prompt Engineering" as "İstem Mühendisliği"'));
+    assert.ok(promptWithGlossary.includes('Keep "LLM" untranslated'));
+    assert.ok(!promptWithGlossary.includes('<Kubernetes>'), 'Girdideki < > etiketleri arındırılmalı');
+    assert.ok(!promptWithGlossary.includes('<HızlıAPI>'), 'Girdideki < > etiketleri arındırılmalı');
+    assert.ok(!promptWithGlossary.includes('\u0000'), 'Girdideki kontrol karakterleri temizlenmeli');
+    assert.ok(!promptWithGlossary.includes('\u001f'), 'Girdideki kontrol karakterleri temizlenmeli');
+    assert.ok(!/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/.test(formatGlossary(glossaryItems)), 'Kontrol karakterleri temizlenmeli');
+
+    // b) 50 kayıt sınırı
+    const sixtyItems = Array.from({ length: 60 }, (_, i) => ({
+      src: `Term${i}`,
+      dst: `Hedef${i}`,
+    }));
+    const sanitized50 = sanitizeGlossary(sixtyItems);
+    assert.equal(sanitized50.length, 50, 'sanitizeGlossary 50 kayıtta durmalı');
+    const prompt50 = systemPrompt('en', 'tr', null, sixtyItems);
+    assert.ok(prompt50.includes('Always translate "Term0" as "Hedef0"'));
+    assert.ok(prompt50.includes('Always translate "Term49" as "Hedef49"'));
+    assert.ok(!prompt50.includes('Term50'), '50 kayıttan sonrası eklenmemeli');
+
+    // c) Sözlük boşken blok yok
+    assert.equal(formatGlossary([]), '');
+    assert.equal(formatGlossary(null), '');
+    assert.equal(formatGlossary(undefined), '');
+    assert.equal(formatGlossary([{ src: '   ' }]), '');
+
+    const promptNoGlossary1 = systemPrompt('en', 'tr', null, []);
+    assert.ok(!promptNoGlossary1.includes('<glossary>'), 'Boş sözlükte <glossary> bulunmamalı');
+    assert.ok(!promptNoGlossary1.includes('</glossary>'));
+
+    const promptNoGlossary2 = systemPrompt('en', 'tr', { glossary: [] });
+    assert.ok(!promptNoGlossary2.includes('<glossary>'));
+
+    const promptNoGlossary3 = systemPrompt('en', 'tr', { meta: { title: 'T' } }, null);
+    assert.ok(!promptNoGlossary3.includes('<glossary>'));
+  }
+
+  // 33) (4) glossaryVariant aynı girdi aynı çıktı, sıra/içerik değişince farklı, boşsa ''
+  {
+    // a) Boşsa ''
+    assert.equal(glossaryVariant([]), '');
+    assert.equal(glossaryVariant(null), '');
+    assert.equal(glossaryVariant(undefined), '');
+    assert.equal(glossaryVariant([{ src: '' }]), '');
+    assert.equal(glossaryVariant([{ src: '<>' }]), '');
+
+    // b) Aynı girdi aynı çıktı
+    const listA = [
+      { src: 'API', dst: 'Uygulama Arayüzü' },
+      { src: 'Docker' },
+    ];
+    const listACopy = [
+      { src: 'API', dst: 'Uygulama Arayüzü' },
+      { src: 'Docker' },
+    ];
+    const hashA1 = glossaryVariant(listA);
+    const hashA2 = glossaryVariant(listACopy);
+    assert.ok(hashA1.startsWith('g'));
+    assert.equal(hashA1, hashA2, 'Aynı girdi aynı variant kodunu üretmeli');
+
+    // c) İçerik değişince farklı
+    const listB = [
+      { src: 'API', dst: 'Farklı Çeviri' },
+      { src: 'Docker' },
+    ];
+    assert.notEqual(glossaryVariant(listB), hashA1, 'İçerik değişince variant farklı olmalı');
+
+    const listC = [
+      { src: 'API', dst: 'Uygulama Arayüzü' },
+      { src: 'Kubernetes' },
+    ];
+    assert.notEqual(glossaryVariant(listC), hashA1, 'Terim değişince variant farklı olmalı');
+
+    // d) Sıra değişince farklı
+    const listReordered = [
+      { src: 'Docker' },
+      { src: 'API', dst: 'Uygulama Arayüzü' },
+    ];
+    const hashReordered = glossaryVariant(listReordered);
+    assert.notEqual(hashReordered, hashA1, 'Sıra değişince variant farklı olmalı');
+  }
+
+  // 34) (5) translate mesajındaki summary alanı istemin <video_context> bloğuna girer
+  {
+    reset();
+    store = { geminiKey: 'gem-key-trans', engine: 'gemini' };
+    plan['generativelanguage.googleapis.com'] = geminiOK(['çıktı 1']);
+
+    const SUMMARY_TEXT = 'Topic: Astrophysics; Domain: Space; Tone: Educational; Terms: Black Hole, Event Horizon';
+
+    // a) handleMessage ile sadece summary verildiğinde
+    const hmResp1 = await new Promise((resolve) => {
+      handleMessage({
+        type: 'translate',
+        lines: ['Sentence 1'],
+        sl: 'en',
+        tl: 'tr',
+        summary: SUMMARY_TEXT,
+      }, {}, resolve);
+    });
+    assert.equal(hmResp1.ok, true);
+    assert.deepEqual(hmResp1.res, ['çıktı 1']);
+
+    const sentReq1 = JSON.parse(reqLog[reqLog.length - 1].opts.body);
+    const sysPrompt1 = sentReq1.systemInstruction.parts[0].text;
+    assert.ok(sysPrompt1.includes('<video_context>'), 'İstemde <video_context> bloğu olmalı');
+    assert.ok(sysPrompt1.includes('</video_context>'));
+    assert.ok(sysPrompt1.includes(`Summary: ${SUMMARY_TEXT}`), 'İstemde özet yer almalı');
+
+    // b) handleMessage ile hem meta hem summary verildiğinde
+    const hmResp2 = await new Promise((resolve) => {
+      handleMessage({
+        type: 'translate',
+        lines: ['Sentence 1'],
+        sl: 'en',
+        tl: 'tr',
+        meta: { title: 'Cosmos', channel: 'Science Channel' },
+        summary: SUMMARY_TEXT,
+      }, {}, resolve);
+    });
+    assert.equal(hmResp2.ok, true);
+
+    const sentReq2 = JSON.parse(reqLog[reqLog.length - 1].opts.body);
+    const sysPrompt2 = sentReq2.systemInstruction.parts[0].text;
+    assert.ok(sysPrompt2.includes('<video_context>'));
+    assert.ok(sysPrompt2.includes('Title: Cosmos'));
+    assert.ok(sysPrompt2.includes('Channel: Science Channel'));
+    assert.ok(sysPrompt2.includes(`Summary: ${SUMMARY_TEXT}`));
+
+    // c) formatVideoContext ve systemPrompt doğrudan doğrulaması
+    const vCtxOnlySummary = formatVideoContext(null, SUMMARY_TEXT);
+    assert.ok(vCtxOnlySummary.includes('<video_context>'));
+    assert.ok(vCtxOnlySummary.includes(`Summary: ${SUMMARY_TEXT}`));
+
+    const promptDirect = systemPrompt('en', 'tr', { summary: SUMMARY_TEXT });
+    assert.ok(promptDirect.includes('<video_context>'));
+    assert.ok(promptDirect.includes(`Summary: ${SUMMARY_TEXT}`));
+  }
+
+  console.log('34/34 motor testi geçti');
 })().catch((e) => { console.error('BAŞARISIZ:', e.message); process.exit(1); });
