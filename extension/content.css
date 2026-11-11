@@ -37,17 +37,8 @@ html.ytr-active .ytp-caption-window-container { opacity: 0 !important; pointer-e
 }
 .ytr-btn:focus-visible { outline: 2px solid #FFC53D; outline-offset: 2px; }
 
-/* Düğme meşgul halkası ve hata noktası */
-.ytr-btn.ytr-busy::before {
-  content: ''; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px;
-  border: 1.5px solid rgba(255, 197, 61, .3); border-top-color: #FFC53D; border-radius: 50%;
-  animation: ytr-spin .8s linear infinite; pointer-events: none;
-}
-@keyframes ytr-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) {
-  .ytr-btn.ytr-busy::before { animation: none; border-top-color: #FFC53D; }
-}
-.ytr-btn.ytr-err:not(.ytr-busy)::before {
+/* Hata noktası (meşgulken animasyon yok) */
+.ytr-btn.ytr-err::before {
   content: ''; position: absolute; top: 7px; right: 7px; width: 6px; height: 6px;
   border-radius: 1px; background: #FF6B5A; pointer-events: none;
 }

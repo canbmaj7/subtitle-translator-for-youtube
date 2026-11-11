@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <rect width="128" height="128" rx="14" fill="#121214"/>
-  <rect x="34" y="33" width="60" height="14" fill="#FFC53D"/>
-  <rect x="20" y="57" width="88" height="14" fill="#FFC53D"/>
-  <rect x="44" y="81" width="40" height="14" fill="#8F8A7E"/>
+  <rect width="128" height="128" rx="26" fill="#FFC53D"/>
+  <path d="M32 24h64a18 18 0 0 1 18 18v36a18 18 0 0 1-18 18H62L40 112V96h-8A18 18 0 0 1 14 78V42a18 18 0 0 1 18-18z" fill="#121214"/>
+  <text x="38" y="75" font-family="Noto Sans, DejaVu Sans, Arial, sans-serif" font-weight="700" font-size="34" text-anchor="middle" fill="#FFC53D">A</text>
+  <path d="M55 60h16m-6-7l7 7-7 7" fill="none" stroke="#FFC53D" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="90" y="74" font-family="Noto Sans CJK JP, Noto Sans CJK SC, sans-serif" font-weight="700" font-size="32" text-anchor="middle" fill="#FFC53D">文</text>
 </svg>
