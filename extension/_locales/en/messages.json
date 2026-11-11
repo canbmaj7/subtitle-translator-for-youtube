@@ -139,9 +139,25 @@
     "message": "Hide key",
     "description": "Tooltip and aria-label to hide API key"
   },
-  "msgKeySaved": {
-    "message": "Saved",
-    "description": "Feedback message when an API key is saved"
+  "btnTestKey": {
+    "message": "Test",
+    "description": "Button to validate API key"
+  },
+  "keyStatusTesting": {
+    "message": "Testing…",
+    "description": "Key status badge while validating"
+  },
+  "keyBadgeInvalid": {
+    "message": "Invalid key",
+    "description": "Detailed key status badge in popup when invalid"
+  },
+  "keyBadgeNetwork": {
+    "message": "Network error, try again later",
+    "description": "Detailed key status badge in popup on network error"
+  },
+  "engineNoKey": {
+    "message": "no key",
+    "description": "Note shown next to engine without API key in popup"
   },
   "privacyNote": {
     "message": "Keys are stored locally in this browser and never synced. Under Gemini's free tier, submitted subtitle text may be used by Google for product improvement.",

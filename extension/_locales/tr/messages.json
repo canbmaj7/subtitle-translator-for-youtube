@@ -139,9 +139,25 @@
     "message": "Anahtarı gizle",
     "description": "Tooltip and aria-label to hide API key"
   },
-  "msgKeySaved": {
-    "message": "Kaydedildi",
-    "description": "Feedback message when an API key is saved"
+  "btnTestKey": {
+    "message": "Test et",
+    "description": "Button to validate API key"
+  },
+  "keyStatusTesting": {
+    "message": "Test ediliyor…",
+    "description": "Key status badge while validating"
+  },
+  "keyBadgeInvalid": {
+    "message": "Geçersiz anahtar",
+    "description": "Detailed key status badge in popup when invalid"
+  },
+  "keyBadgeNetwork": {
+    "message": "Ağ hatası, sonra tekrar dene",
+    "description": "Detailed key status badge in popup on network error"
+  },
+  "engineNoKey": {
+    "message": "anahtar yok",
+    "description": "Note shown next to engine without API key in popup"
   },
   "privacyNote": {
     "message": "Anahtarlar yalnızca bu tarayıcıda saklanır, senkronlanmaz. Gemini ücretsiz katmanında gönderilen altyazı metni Google tarafından ürün geliştirmede kullanılabilir.",

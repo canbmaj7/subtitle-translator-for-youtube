@@ -8,6 +8,7 @@ const ext = (f) => path.join(__dirname, '../extension', f);
 const APP = require(ext('ui-appearance.js'));
 const TRANS_UI = require(ext('ui-transcript.js'));
 const UI = require(ext('ui-pages.js'));
+const POPUP = require(ext('popup.js'));
 
 const en = JSON.parse(fs.readFileSync(ext('_locales/en/messages.json'), 'utf8'));
 const tr = JSON.parse(fs.readFileSync(ext('_locales/tr/messages.json'), 'utf8'));
@@ -130,12 +131,88 @@ assert.deepEqual(TRANS_UI.formatRowState({ text: 'Hello', tr: null }), {
   pending: true,
 });
 
-// 7) Döndürülen tüm mesaj anahtarları hem en hem tr messages.json'da tanımlı olmalı
+// 7) Popup saf mantık (popup.js): rozet seçimi, aksiyon kararı, motor soluklaştırma ve hata mesajı
+assert.deepEqual(POPUP.popupKeyBadge('gemini', '', { gemini: { state: 'valid' } }, false), {
+  visible: false, state: 'missing', msgKey: '', tone: '',
+});
+assert.deepEqual(POPUP.popupKeyBadge('gemini', '   ', null, true), {
+  visible: false, state: 'missing', msgKey: '', tone: '',
+});
+assert.deepEqual(POPUP.popupKeyBadge('gemini', 'secret-key', { gemini: { state: 'valid' } }, true), {
+  visible: true, state: 'testing', msgKey: 'keyStatusTesting', tone: 'gray',
+});
+assert.deepEqual(POPUP.popupKeyBadge('gemini', 'secret-key', { gemini: { state: 'valid' } }, false), {
+  visible: true, state: 'valid', msgKey: 'keyStatusValid', tone: 'green',
+});
+assert.deepEqual(POPUP.popupKeyBadge('gemini', 'secret-key', { gemini: { state: 'invalid' } }, false), {
+  visible: true, state: 'invalid', msgKey: 'keyBadgeInvalid', tone: 'red',
+});
+assert.deepEqual(POPUP.popupKeyBadge('groq', 'secret-key', { groq: { state: 'quota' } }, false), {
+  visible: true, state: 'quota', msgKey: 'keyStatusQuota', tone: 'orange',
+});
+assert.deepEqual(POPUP.popupKeyBadge('groq', 'secret-key', { groq: { state: 'network' } }, false), {
+  visible: true, state: 'network', msgKey: 'keyBadgeNetwork', tone: 'gray',
+});
+assert.deepEqual(POPUP.popupKeyBadge('gemini', 'secret-key', {}, false), {
+  visible: true, state: 'unchecked', msgKey: 'keyStatusUnchecked', tone: 'gray',
+});
+
+// Anahtar boş/dolu durumunda aksiyon kararı (paste / blur / test / input)
+assert.deepEqual(POPUP.decideKeyAction('  yeni-anahtar ', '', 'paste'), {
+  action: 'validate', value: 'yeni-anahtar', shouldSave: true, shouldValidate: true,
+});
+assert.deepEqual(POPUP.decideKeyAction('yeni-anahtar', '', 'blur'), {
+  action: 'validate', value: 'yeni-anahtar', shouldSave: true, shouldValidate: true,
+});
+assert.deepEqual(POPUP.decideKeyAction('ayni-anahtar', 'ayni-anahtar', 'blur'), {
+  action: 'noop', value: 'ayni-anahtar', shouldSave: false, shouldValidate: false,
+});
+assert.deepEqual(POPUP.decideKeyAction('ayni-anahtar', 'ayni-anahtar', 'test'), {
+  action: 'validate', value: 'ayni-anahtar', shouldSave: false, shouldValidate: true,
+});
+assert.deepEqual(POPUP.decideKeyAction('   ', 'eski-anahtar', 'blur'), {
+  action: 'clear', value: '', shouldSave: true, shouldValidate: false,
+});
+assert.deepEqual(POPUP.decideKeyAction('', '', 'blur'), {
+  action: 'clear', value: '', shouldSave: false, shouldValidate: false,
+});
+assert.deepEqual(POPUP.decideKeyAction('', 'eski-anahtar', 'input'), {
+  action: 'clear', value: '', shouldSave: true, shouldValidate: false,
+});
+assert.deepEqual(POPUP.decideKeyAction('yaziliyor', 'eski-anahtar', 'input'), {
+  action: 'noop', value: 'yaziliyor', shouldSave: false, shouldValidate: false,
+});
+
+// Çeviri motoru seçeneği soluklaştırma ve "anahtar yok" notu
+assert.deepEqual(POPUP.engineOptionState('auto', { geminiKey: '', groqKey: '' }, {}), {
+  code: 'auto', labelKey: 'engineAuto', hasKey: true, dim: false, noteKey: '',
+});
+assert.deepEqual(POPUP.engineOptionState('google', { geminiKey: '', groqKey: '' }, {}), {
+  code: 'google', labelKey: 'engineGoogle', hasKey: true, dim: false, noteKey: '',
+});
+assert.deepEqual(POPUP.engineOptionState('gemini', { geminiKey: '', groqKey: '' }, {}), {
+  code: 'gemini', labelKey: 'engineGemini', hasKey: false, dim: true, noteKey: 'engineNoKey',
+});
+assert.deepEqual(POPUP.engineOptionState('groq', { geminiKey: '', groqKey: 'gsk_test' }, {}), {
+  code: 'groq', labelKey: 'engineGroq', hasKey: true, dim: false, noteKey: '',
+});
+
+// Seçili motorun son hatası ve anahtar sızdırmama garantisi
+const SECRET = 'AIzaSy_SECRET_DO_NOT_LEAK_12345';
+const badgeDump = JSON.stringify(POPUP.popupKeyBadge('gemini', SECRET, { gemini: { state: 'invalid' } }, false));
+assert.ok(!badgeDump.includes(SECRET), 'popupKeyBadge çıktısında anahtar yer almamalı');
+assert.deepEqual(POPUP.formatEngineIssue('gemini', sampleIssues, (k) => tr[k].message), {
+  engine: 'Gemini', code: 'quota', msgKey: 'issueQuota', text: 'Gemini: ' + tr.issueQuota.message,
+});
+assert.equal(POPUP.formatEngineIssue('google', sampleIssues, (k) => tr[k].message), null);
+
+// 8) Döndürülen tüm mesaj anahtarları hem en hem tr messages.json'da tanımlı olmalı
 const keysToCheck = [
   'issueNokey', 'issueInvalid', 'issueQuota', 'issueNetwork',
   'issueTimeout', 'issueServer', 'issueMismatch', 'issueUnknown',
   'keyStatusValid', 'keyStatusInvalid', 'keyStatusQuota',
   'keyStatusNetwork', 'keyStatusUnchecked', 'keyStatusMissing', 'keyAddInfo',
+  'btnTestKey', 'keyStatusTesting', 'keyBadgeInvalid', 'keyBadgeNetwork', 'engineNoKey',
   'engineAuto', 'engineGoogle', 'engineGemini', 'engineGroq',
   'toastTranslationOn', 'toastTranslationOff', 'btnBack',
   'navLanguage', 'navEngine', 'navTranscript', 'navAppearance', 'navAdvanced',
@@ -150,4 +227,4 @@ for (const k of keysToCheck) {
   assert.ok(tr[k] && tr[k].message, `tr messages.json içinde ${k} eksik`);
 }
 
-console.log('7/7 arayüz testi geçti');
+console.log('8/8 arayüz testi geçti');

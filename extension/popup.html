@@ -9,7 +9,7 @@
   <!-- Header Bar -->
   <header class="header">
     <div class="header-left">
-      <img src="icons/icon48.png" alt="" class="header-icon" width="32" height="32">
+      <img src="icons/icon48.png" alt="" class="header-icon" width="28" height="28">
       <div class="header-meta">
         <h1 class="header-title" data-i18n="extName">Subtitle Translator for YouTube</h1>
         <span class="version-tag" id="version-tag"></span>
@@ -68,6 +68,44 @@
     </div>
   </section>
 
+  <!-- Translation Engine Card -->
+  <section class="card" aria-labelledby="card-engine-title">
+    <h2 class="card-title" id="card-engine-title" data-i18n="navEngine">Translation engine</h2>
+    <div class="engine-list" role="radiogroup" aria-labelledby="card-engine-title">
+      <label class="engine-opt" data-engine="auto" for="engine-auto">
+        <span class="engine-left">
+          <input type="radio" name="engine" id="engine-auto" value="auto">
+          <span class="engine-check" aria-hidden="true">✓</span>
+          <span class="engine-name" data-i18n="engineAuto">Automatic</span>
+        </span>
+      </label>
+      <label class="engine-opt" data-engine="google" for="engine-google">
+        <span class="engine-left">
+          <input type="radio" name="engine" id="engine-google" value="google">
+          <span class="engine-check" aria-hidden="true">✓</span>
+          <span class="engine-name" data-i18n="engineGoogle">Google</span>
+        </span>
+      </label>
+      <label class="engine-opt" data-engine="gemini" for="engine-gemini">
+        <span class="engine-left">
+          <input type="radio" name="engine" id="engine-gemini" value="gemini">
+          <span class="engine-check" aria-hidden="true">✓</span>
+          <span class="engine-name" data-i18n="engineGemini">Gemini</span>
+        </span>
+        <span class="engine-note" id="engine-note-gemini" hidden></span>
+      </label>
+      <label class="engine-opt" data-engine="groq" for="engine-groq">
+        <span class="engine-left">
+          <input type="radio" name="engine" id="engine-groq" value="groq">
+          <span class="engine-check" aria-hidden="true">✓</span>
+          <span class="engine-name" data-i18n="engineGroq">Groq</span>
+        </span>
+        <span class="engine-note" id="engine-note-groq" hidden></span>
+      </label>
+    </div>
+    <div class="issue-box" id="engine-issue" role="status" aria-live="polite" hidden></div>
+  </section>
+
   <!-- AI / API Key Card -->
   <section class="card" aria-labelledby="card-ai-title">
     <h2 class="card-title" id="card-ai-title" data-i18n="cardAiTitle">Better translation (free API key)</h2>
@@ -82,13 +120,16 @@
         </div>
         <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" class="key-link" data-i18n="getKeyLink">Get key</a>
       </div>
-      <div class="input-wrap">
-        <input type="password" id="geminiKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderGeminiKey" placeholder="AIza...">
-        <button type="button" class="eye-btn" data-target="geminiKey" data-i18n-title="btnShowKey" aria-label="Show key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+      <div class="input-row">
+        <div class="input-wrap">
+          <input type="password" id="geminiKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderGeminiKey" placeholder="AIza...">
+          <button type="button" class="eye-btn" data-target="geminiKey" data-i18n-title="btnShowKey" aria-label="Show key"></button>
+        </div>
+        <button type="button" class="test-btn" id="geminiKey-test" data-provider="gemini" data-i18n="btnTestKey">Test</button>
       </div>
-      <div class="field-feedback" id="geminiKey-feedback" aria-live="polite"></div>
+      <div class="field-status">
+        <span class="key-badge" id="geminiKey-badge" role="status" aria-live="polite" hidden></span>
+      </div>
     </div>
 
     <!-- Groq Key Field -->
@@ -100,13 +141,16 @@
         </div>
         <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" class="key-link" data-i18n="getKeyLink">Get key</a>
       </div>
-      <div class="input-wrap">
-        <input type="password" id="groqKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderGroqKey" placeholder="gsk_...">
-        <button type="button" class="eye-btn" data-target="groqKey" data-i18n-title="btnShowKey" aria-label="Show key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+      <div class="input-row">
+        <div class="input-wrap">
+          <input type="password" id="groqKey" class="custom-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="placeholderGroqKey" placeholder="gsk_...">
+          <button type="button" class="eye-btn" data-target="groqKey" data-i18n-title="btnShowKey" aria-label="Show key"></button>
+        </div>
+        <button type="button" class="test-btn" id="groqKey-test" data-provider="groq" data-i18n="btnTestKey">Test</button>
       </div>
-      <div class="field-feedback" id="groqKey-feedback" aria-live="polite"></div>
+      <div class="field-status">
+        <span class="key-badge" id="groqKey-badge" role="status" aria-live="polite" hidden></span>
+      </div>
     </div>
 
     <p class="privacy-note" data-i18n="privacyNote">Keys are stored locally in this browser and never synced. Under Gemini's free tier, submitted subtitle text may be used by Google for product improvement.</p>
@@ -119,6 +163,7 @@
   </footer>
 
   <script src="languages.js"></script>
+  <script src="ui-pages.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
